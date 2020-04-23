@@ -15,20 +15,33 @@ def parse_scan(line):
         result.append(float(item.split('|')[0]))
     return result
 
+def find_first_middle_value(xy_values, timestamps):
+    u = 0
+    for row in xy_values:
+        for item in row:
+            if item[0] == 0:
+                return (timestamps[u], item)
+        u+=1
+
 # Open UBH file
 with open('file.ubh') as recording:
     end_result = []
+    timestamps = []
     ps = False
-
-    running = True
+    pt = False
 
     i = 0
     # Iterate all records in the recording
     for line in recording:
         result = []
+        if line.strip() == '[timestamp]':
+            pt = True
         # This signifies the next line will be a scan
-        if line.strip() == '[scan]':
+        elif line.strip() == '[scan]':
             ps = True
+        elif pt == True:
+            pt = False
+            timestamps.append(line.strip())
         elif ps == True:
             ps = False
             # All scans are appended to the end_result for further processing
@@ -69,5 +82,34 @@ with open('file.ubh') as recording:
             j+=1
         xy_values.append(row)
         k+=1
+
+    first_row = xy_values[0]
+    last_row = xy_values[len(xy_values) - 1]
+
+    first_value = first_row[len(first_row) - 1]
+    last_value = last_row[0]
+
+    first_timestamp = timestamps[0]
+    last_timestamp = timestamps[len(xy_values) - 1]
+
+    middle = find_first_middle_value(xy_values, timestamps)
+    middle_timestamp = middle[0]
+    middle_value = middle[1]
+
+
+    print('First')
+    print(first_timestamp)
+    print(first_value)
+    #print(last_timestamp)
+    #print(last_value)
+    print('Middle')
+    print(middle_timestamp)
+    print(middle_value)
+
+    print('Diff')
+    print(int(middle_timestamp) - int(first_timestamp))
+    print(first_value[0])
+
+    
 
     
