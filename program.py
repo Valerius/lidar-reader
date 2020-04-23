@@ -15,12 +15,24 @@ def parse_scan(line):
         result.append(float(item.split('|')[0]))
     return result
 
-def find_first_middle_value(xy_values, timestamps):
+def last(list):
+    return list[-1]
+
+def first(list):
+    return list[0]
+
+def trace_beginning_of_train(xy_values, timestamps):
+    result = []
     u = 0
     for row in xy_values:
-        for item in row:
-            if item[0] == 0:
-                return (timestamps[u], item)
+        # Front of the train
+        last_item = last(row)
+        # If front of train has passed the y-axis, then stop
+        if last_item[0] <= 0:
+            return result
+        # The front of the train is a bit further from the lidar
+        elif last_item[1] > 3000:
+            result.append((timestamps[u], last_item))
         u+=1
 
 # Open UBH file
@@ -83,33 +95,26 @@ with open('file.ubh') as recording:
         xy_values.append(row)
         k+=1
 
-    first_row = xy_values[0]
-    last_row = xy_values[len(xy_values) - 1]
+    # Collection of points of the front of the train until it reaches the y-axis
+    train_front_trace = trace_beginning_of_train(xy_values, timestamps)
+    # Approximately the moment the train hits the y-axis
+    last_front_trace = last(train_front_trace)
+    # Time in milliseconds the train needs to reach the y-axis
+    total_time_interval = int(last_front_trace[0]) - int(train_front_trace[0][0])
+    print(total_time_interval)
+    speeds = []
 
-    first_value = first_row[len(first_row) - 1]
-    last_value = last_row[0]
+    # Calculate the speed of the train at each given snapshot
+    for item in train_front_trace:
+        # millimeters
+        distance = item[1][0] - last_front_trace[1][0]
+        # milliseconds
+        time_interval = int(last_front_trace[0]) - int(item[0])
+        if time_interval != 0:
+            # Speed in m/s
+            speed = distance/time_interval
+            speeds.append((speed, time_interval))
 
-    first_timestamp = timestamps[0]
-    last_timestamp = timestamps[len(xy_values) - 1]
+    average_accelleration = (last(speeds)[0] - speeds[0][0]) / (total_time_interval / 1000)
+    print(average_accelleration)
 
-    middle = find_first_middle_value(xy_values, timestamps)
-    middle_timestamp = middle[0]
-    middle_value = middle[1]
-
-
-    print('First')
-    print(first_timestamp)
-    print(first_value)
-    #print(last_timestamp)
-    #print(last_value)
-    print('Middle')
-    print(middle_timestamp)
-    print(middle_value)
-
-    print('Diff')
-    print(int(middle_timestamp) - int(first_timestamp))
-    print(first_value[0])
-
-    
-
-    
