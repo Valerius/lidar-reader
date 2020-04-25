@@ -6,6 +6,8 @@ import numpy as np
 import pdb
 # Math library
 import math as m
+# Import plotting library
+import matplotlib.pyplot as plt
 
 # This function parses scans (one rotation recording by the lidar)
 def parse_scan(line):
@@ -14,18 +16,6 @@ def parse_scan(line):
     for item in row:
         result.append(float(item.split('|')[0]))
     return result
-
-def trace_beginning_of_train(coordinates, timestamps):
-    result = []
-    for i, row in enumerate(coordinates):
-        # Front of the train
-        last_item = row[-1]
-        # If front of train has passed the y-axis, then stop
-        if last_item[0] <= 0:
-            return result
-        # The front of the train is a bit further from the lidar
-        elif last_item[1] > 3000:
-            result.append((timestamps[i], last_item))
 
 def calculate_angle(index):
     return m.radians(135 - index * 0.25)
@@ -109,11 +99,12 @@ def print_trace_simple(trace):
 
     print("Timespan: {}".format(calculate_trace_timespan(trace)))
     print("Distance: {}".format(calculate_trace_distance(trace)))
+    print("Average velocity: {}".format(calculate_velocity(trace)))
 
 def calculate_trace_timespan(trace):
     start = trace[0][0]
     end = trace[-1][0]
-    return end - start
+    return (end - start)
 
 def calculate_trace_distance(trace):
     start = trace[0][1][0]
@@ -121,7 +112,47 @@ def calculate_trace_distance(trace):
     if start > 0:
         return start - end
     else:
-        return end - start
+        return abs(end) - abs(start)
+
+def trace_beginning_of_train(coordinates, timestamps):
+    result = []
+    for i, row in enumerate(coordinates):
+        # Front of the train
+        last_item = row[-1]
+        # If front of train has passed the y-axis, then stop
+        if last_item[0] <= 0:
+            return result
+        # The front of the train is a bit further from the lidar
+        elif last_item[1] > 3000:
+            result.append((timestamps[i], last_item))
+    return result
+
+def trace_back_of_train(coordinates, timestamps):
+    result = []
+    for i, row in enumerate(coordinates):
+        first_item = row[0]
+        if first_item[0] <= 0:
+            result.append((timestamps[i], first_item))
+    return result
+
+def calculate_velocity(trace):
+    distance = calculate_trace_distance(trace)
+    timespan = calculate_trace_timespan(trace)
+    avg_velocity = distance/timespan
+    return avg_velocity
+
+def calculate_total_timespan(timestamps):
+    start = timestamps[0]
+    end = timestamps[-1]
+    return end - start
+
+def calculate_accelleration(v1, v2, timespan):
+    return (v2 - v1) / (timespan / 1000)
+
+def get_total_distance(start, end):
+    print(start)
+    print(end)
+    return abs(end - start)
 
 # Open UBH file
 with open('file.ubh') as recording:
@@ -139,36 +170,43 @@ with open('file.ubh') as recording:
         )
     coordinates = calculate_coordinates(distances)
 
-
-
-
-
-
-
-
-
-
-
-    # Collection of points of the front of the train until it reaches the y-axis
     train_front_trace = trace_beginning_of_train(coordinates, timestamps)
-    print_trace_simple(train_front_trace)
-    # Approximately the moment the train hits the y-axis
-    last_front_trace = train_front_trace[-1]
-    # Time in milliseconds the train needs to reach the y-axis
-    total_time_interval = last_front_trace[0] - train_front_trace[0][0]
-    speeds = []
+    #print_trace_simple(train_front_trace)
+    front_trace_timespan = calculate_trace_timespan(train_front_trace)
+    front_trace_distance = calculate_trace_distance(train_front_trace)
+    incrementation_per_scan = front_trace_distance / (front_trace_timespan / 25)
 
-    # Calculate the speed of the train at each given snapshot
-    for item in train_front_trace:
-        # millimeters
-        distance = item[1][0] - last_front_trace[1][0]
-        # milliseconds
-        time_interval = last_front_trace[0] - item[0]
-        if time_interval != 0:
-            # Speed in m/s
-            speed = distance/time_interval
-            speeds.append((speed, time_interval))
+    x_values = []
+    y_values = []
 
-    average_accelleration = (speeds[-1][0] - speeds[0][0]) / (total_time_interval / 1000)
-    #1475
+
+    for scan in coordinates:
+        offset = 0
+        for j, value in enumerate(reversed(scan)):
+            if j < 1:
+                offset = offset - value[0]
+            if value[0] > 0:
+                x_values.append(value[0] - offset)
+            else:
+                x_values.append(value[0] + offset)   
+
+            y_values.append(value[1])
+    
+    colors = [(0,0,0)]
+    area = np.pi*3
+
+    # Plot
+    plt.scatter(x_values, y_values, s=area, c=colors, alpha=0.5)
+    plt.title('Scatter plot pythonspot.com')
+    plt.xlabel('x')
+    plt.ylabel('y')
+    plt.show()
+
+
+
+    # train_back_trace = trace_back_of_train(coordinates, timestamps)
+    # print_trace_simple(train_back_trace)
+
+    # print("Total timespan: {}".format(total_timespan(timestamps)))
+    # print("Avg. accelleration: {}".format(calculate_accelleration(calculate_velocity(train_front_trace), calculate_velocity(train_back_trace), total_timespan(timestamps))))
 
