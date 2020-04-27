@@ -8,6 +8,7 @@ import pdb
 import math as m
 # Import plotting library
 import matplotlib.pyplot as plt
+import gc
 
 # This function parses scans (one rotation recording by the lidar)
 def parse_scan(line):
@@ -146,8 +147,9 @@ def calculate_total_timespan(timestamps):
     end = timestamps[-1]
     return end - start
 
-def calculate_accelleration(v1, v2, timespan):
-    return (v2 - v1) / (timespan / 1000)
+def calculate_accelleration_per_scan(v1, v2, timespan):
+    print(timespan)
+    return (v2 - v1) / (timespan)
 
 def get_total_distance(start, end):
     print(start)
@@ -171,42 +173,46 @@ with open('file.ubh') as recording:
     coordinates = calculate_coordinates(distances)
 
     train_front_trace = trace_beginning_of_train(coordinates, timestamps)
+    train_back_trace = trace_back_of_train(coordinates, timestamps)
+
+
     #print_trace_simple(train_front_trace)
     front_trace_timespan = calculate_trace_timespan(train_front_trace)
     front_trace_distance = calculate_trace_distance(train_front_trace)
-    incrementation_per_scan = front_trace_distance / (front_trace_timespan / 25)
+    #incrementation_per_scan = front_trace_distance / (front_trace_timespan / 25)
+    vel_front = calculate_velocity(train_front_trace)
+    vel_back = calculate_velocity(train_back_trace)
+    
+    print(vel_front)
+    print(vel_back)
+    print(calculate_total_timespan(timestamps))
+    acc_per_scan = calculate_accelleration_per_scan(vel_front, vel_back, calculate_total_timespan(timestamps)) * 25
+    print(acc_per_scan)
+    # for i in range(0, 535):
+    #     current_vel = vel_front + acc_per_scan * i
+    #     print(current_vel)
+
+    colors = [(0,0,0)]
+    area = np.pi*3
 
     x_values = []
     y_values = []
 
+    for i, scan in enumerate(coordinates):
 
-    for scan in coordinates:
-        offset = 0
-        for j, value in enumerate(reversed(scan)):
-            if j < 1:
-                offset = offset - value[0]
-            if value[0] > 0:
-                x_values.append(value[0] - offset)
-            else:
-                x_values.append(value[0] + offset)   
-
+        current_vel = vel_front + acc_per_scan * i
+        offset = current_vel * 25 * i
+        for value in scan:
+            x_values.append(value[0] + offset)
             y_values.append(value[1])
-    
-    colors = [(0,0,0)]
-    area = np.pi*3
-
-    # Plot
-    plt.scatter(x_values, y_values, s=area, c=colors, alpha=0.5)
-    plt.title('Scatter plot pythonspot.com')
-    plt.xlabel('x')
-    plt.ylabel('y')
-    plt.show()
-
-
-
-    # train_back_trace = trace_back_of_train(coordinates, timestamps)
-    # print_trace_simple(train_back_trace)
-
-    # print("Total timespan: {}".format(total_timespan(timestamps)))
-    # print("Avg. accelleration: {}".format(calculate_accelleration(calculate_velocity(train_front_trace), calculate_velocity(train_back_trace), total_timespan(timestamps))))
-
+       
+        if i == len(coordinates) - 1:
+            plt.figure(figsize=(200, 5), dpi=160)
+            plt.scatter(x_values, y_values, s=area, c=colors, alpha=0.5)
+            plt.title("scan-{}.png".format(i))
+            plt.xlabel('x')
+            plt.ylabel('y')
+            plt.savefig("scan-{}.png".format(i), dpi='figure')
+            plt.close()
+        print("scan {}, amount of x cor: {}".format(i, len(x_values)))
+    gc.collect()
