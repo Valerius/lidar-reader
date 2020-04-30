@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import gc
 from datetime import datetime
 
-# This function parses scans (one rotation recording by the lidar)
+# Parse a scan (one rotation recording by the lidar), extracting the distance (x)
 def parse_scan(line):
     result = []
     row = line.split(';')
@@ -19,21 +19,28 @@ def parse_scan(line):
         result.append(float(item.split('|')[0]))
     return result
 
+# Calculate the angle of one distance measurement of a scan.
+# Each index represents an increase of 0.25 deg from the start of the rotation (index 0)
+# The angle is converted to radians.
 def calculate_angle(index):
     return m.radians(135 - index * 0.25)
 
+# Using the angle and the distance, the x coordinate is calculated
 def calculate_x_coordinate(distance, angle):
     return distance * m.sin(angle)
 
+# Using the angle and the distance, the y coordinate is calculated
 def calculate_y_coordinate(distance, angle):
     return distance * m.cos(angle)
 
+# Using the index and the distance, the x and y coordinates are calculated
 def calculate_coordinate(distance, index):
     angle = calculate_angle(index)
     x_coordinate = calculate_x_coordinate(distance, angle)
     y_coordinate = calculate_y_coordinate(distance, angle)
     return (x_coordinate, y_coordinate)
 
+# Iterating over every scan in a recording, the coordinates are calculated
 def calculate_coordinates(distances):
     result = []
     # Iterate over every row (scan)
@@ -55,6 +62,7 @@ def calculate_coordinates(distances):
         result.append(row)
     return result
 
+# The ubh file is parsed for the timestamps, the scans and the endStep
 def get_timestamps_and_scans(recording):
     records = []
     timestamps = []
@@ -89,12 +97,14 @@ def get_timestamps_and_scans(recording):
 
     return {'records': records, 'timestamps': timestamps, 'amount_of_records': index, 'endstep': endstep}
 
+# Convert parsed records to a 2D array
 def calculate_distances(records, amount_of_records, endstep):
     if endstep is not None:
         return np.array(records).reshape((amount_of_records, endstep + 1))
     else:
         exit('No endStep given in ubh file')
 
+# Print the results of a trace
 def print_trace_simple(trace):
     for item in trace:
         print("{} at {}ms".format(item[1], item[0]))
@@ -103,11 +113,14 @@ def print_trace_simple(trace):
     print("Distance: {}".format(calculate_trace_distance(trace)))
     print("Average velocity: {}".format(calculate_velocity(trace)))
 
+# Calculate the timespan of a trace
 def calculate_trace_timespan(trace):
     start = trace[0][0]
     end = trace[-1][0]
     return (end - start)
 
+# Calculate the distance that is traveled in a trace 
+# (only applicable to a trace of the front or the back)
 def calculate_trace_distance(trace):
     start = trace[0][1][0]
     end = trace[-1][1][0]
@@ -116,6 +129,7 @@ def calculate_trace_distance(trace):
     else:
         return abs(end) - abs(start)
 
+# Make a trace of the beginning of the front of the train
 def trace_beginning_of_train(coordinates, timestamps):
     result = []
     for i, row in enumerate(coordinates):
@@ -129,6 +143,7 @@ def trace_beginning_of_train(coordinates, timestamps):
             result.append((timestamps[i], last_item))
     return result
 
+# Make a trace of the back of the train
 def trace_back_of_train(coordinates, timestamps):
     result = []
     for i, row in enumerate(coordinates):
@@ -137,28 +152,27 @@ def trace_back_of_train(coordinates, timestamps):
             result.append((timestamps[i], first_item))
     return result
 
+# Calculate the velocity of a train in a front or back trace
 def calculate_velocity(trace):
     distance = calculate_trace_distance(trace)
     timespan = calculate_trace_timespan(trace)
     avg_velocity = distance/timespan
     return avg_velocity
 
+# Calculate the timespan of a whole recording
 def calculate_total_timespan(timestamps):
     start = timestamps[0]
     end = timestamps[-1]
     return end - start
 
-def calculate_accelleration_per_scan(v1, v2, timespan):
-    print(timespan)
+# Calculate the increase of velocity distributed over every scan of the recording
+# The v1 and v2 are the velocity of the front and the backtrace
+def calculate_accelleration_per_ms(v1, v2, timespan):
     return (v2 - v1) / (timespan)
-
-def get_total_distance(start, end):
-    print(start)
-    print(end)
-    return abs(end - start)
 
 # Open UBH file
 with open('file2.ubh') as recording:
+    # Parse recording for records, timestamps and the amount of records
     processed_recording = get_timestamps_and_scans(recording)
     records = processed_recording['records']
     timestamps = processed_recording ['timestamps']
@@ -171,39 +185,50 @@ with open('file2.ubh') as recording:
             amount_of_records,
             processed_recording['endstep']
         )
+    
+    # Calculate the coordinates for each distance
     coordinates = calculate_coordinates(distances)
 
+    # Calculate the trace of the front of the train
     train_front_trace = trace_beginning_of_train(coordinates, timestamps)
+    # Calculate the trace of the end of the train
     train_back_trace = trace_back_of_train(coordinates, timestamps)
 
-
-    #print_trace_simple(train_front_trace)
-    front_trace_timespan = calculate_trace_timespan(train_front_trace)
-    front_trace_distance = calculate_trace_distance(train_front_trace)
-
+    # Calculate the velocities of the front and the back trace of the train
     vel_front = calculate_velocity(train_front_trace)
     vel_back = calculate_velocity(train_back_trace)
     
     print(vel_front)
     print(vel_back)
     print(calculate_total_timespan(timestamps))
-    acc_per_scan = calculate_accelleration_per_scan(vel_front, vel_back, calculate_total_timespan(timestamps)) * 25
-    print(acc_per_scan)
 
+    # Calculate the increase of speed of the train in mm/ms^2 or m/s^2 for the whole recording
+    acc_per_ms = calculate_accelleration_per_ms(vel_front, vel_back, calculate_total_timespan(timestamps))
+
+    # Vars for the rendering of the image of the train
     colors = [(0,0,0)]
     area = np.pi*3
-
     x_values = []
     y_values = []
 
+    # Iterate through each scan
     for i, scan in enumerate(coordinates):
 
-        current_vel = vel_front + acc_per_scan * i
+        # Calculate the supposed velocity of the train during this scan
+        # The velocity of the front trace is increased with the acceleration per ms multiplied with the index
+        # and 25ms (duration of a scan)
+        current_vel = vel_front + acc_per_ms * i * 25
+        # Calculate the offset for each scan (current velocity multiplied by the index and the 25ms (duration of a scan))
         offset = current_vel * 25 * i
+
+        # Iterate through each coordinate in a scan
         for value in scan:
+            # Since the train in the simulation is traveling right to left (pos x to neg x)
+            # the offset needs to be added to the x value
             x_values.append(value[0] + offset)
             y_values.append(value[1])
        
+        # Render an image of the accummulated image of all the coordinates
         if i == len(coordinates) - 1:
             plt.figure(figsize=(200, 5), dpi=160)
             plt.scatter(x_values, y_values, s=area, c=colors, alpha=0.5)

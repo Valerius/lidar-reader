@@ -132,4 +132,4 @@ dmypy.json
 file.ubh
 
 # Rendered images
-snapshots/
+snapshots/*
