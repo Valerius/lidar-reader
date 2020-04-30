@@ -9,6 +9,7 @@ import math as m
 # Import plotting library
 import matplotlib.pyplot as plt
 import gc
+from datetime import datetime
 
 # This function parses scans (one rotation recording by the lidar)
 def parse_scan(line):
@@ -157,7 +158,7 @@ def get_total_distance(start, end):
     return abs(end - start)
 
 # Open UBH file
-with open('file.ubh') as recording:
+with open('file2.ubh') as recording:
     processed_recording = get_timestamps_and_scans(recording)
     records = processed_recording['records']
     timestamps = processed_recording ['timestamps']
@@ -179,7 +180,7 @@ with open('file.ubh') as recording:
     #print_trace_simple(train_front_trace)
     front_trace_timespan = calculate_trace_timespan(train_front_trace)
     front_trace_distance = calculate_trace_distance(train_front_trace)
-    #incrementation_per_scan = front_trace_distance / (front_trace_timespan / 25)
+
     vel_front = calculate_velocity(train_front_trace)
     vel_back = calculate_velocity(train_back_trace)
     
@@ -188,9 +189,6 @@ with open('file.ubh') as recording:
     print(calculate_total_timespan(timestamps))
     acc_per_scan = calculate_accelleration_per_scan(vel_front, vel_back, calculate_total_timespan(timestamps)) * 25
     print(acc_per_scan)
-    # for i in range(0, 535):
-    #     current_vel = vel_front + acc_per_scan * i
-    #     print(current_vel)
 
     colors = [(0,0,0)]
     area = np.pi*3
@@ -212,7 +210,7 @@ with open('file.ubh') as recording:
             plt.title("scan-{}.png".format(i))
             plt.xlabel('x')
             plt.ylabel('y')
-            plt.savefig("scan-{}.png".format(i), dpi='figure')
+            plt.savefig(datetime.now().strftime("%H:%M:%S"), dpi='figure')
             plt.close()
         print("scan {}, amount of x cor: {}".format(i, len(x_values)))
     gc.collect()
