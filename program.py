@@ -1,5 +1,6 @@
 # Functionality to open files
 import os
+import sys
 # Stats library
 import numpy as np
 # For debugging purposes
@@ -10,6 +11,8 @@ import math as m
 import matplotlib.pyplot as plt
 import gc
 from datetime import datetime
+from PyQt5 import QtWidgets
+import pyqtgraph as pg
 
 # Parse a scan (one rotation recording by the lidar), extracting the distance (x)
 def parse_scan(line):
@@ -208,34 +211,24 @@ with open('file2.ubh') as recording:
     # Vars for the rendering of the image of the train
     colors = [(0,0,0)]
     area = np.pi*3
-    x_values = []
-    y_values = []
+
+    app = QtWidgets.QApplication(sys.argv)
 
     # Iterate through each scan
     for i, scan in enumerate(coordinates):
+        x_values = []
+        y_values = []
 
-        # Calculate the supposed velocity of the train during this scan
-        # The velocity of the front trace is increased with the acceleration per ms multiplied with the index
-        # and 25ms (duration of a scan)
-        current_vel = vel_front + acc_per_ms * i * 25
-        # Calculate the offset for each scan (current velocity multiplied by the index and the 25ms (duration of a scan))
-        offset = current_vel * 25 * i
-
-        # Iterate through each coordinate in a scan
-        for value in scan:
-            # Since the train in the simulation is traveling right to left (pos x to neg x)
-            # the offset needs to be added to the x value
-            x_values.append(value[0] + offset)
-            y_values.append(value[1])
-       
-        # Render an image of the accummulated image of all the coordinates
-        if i == len(coordinates) - 1:
-            plt.figure(figsize=(200, 5), dpi=160)
-            plt.scatter(x_values, y_values, s=area, c=colors, alpha=0.5)
-            plt.title("scan-{}.png".format(i))
-            plt.xlabel('x')
-            plt.ylabel('y')
-            plt.savefig(datetime.now().strftime("%H:%M:%S"), dpi='figure')
-            plt.close()
-        print("scan {}, amount of x cor: {}".format(i, len(x_values)))
+        if i == 300:
+            # Iterate through each coordinate in a scan
+            for value in scan:
+                # Since the train in the simulation is traveling right to left (pos x to neg x)
+                # the offset needs to be added to the x value
+                x_values.append(value[0]/1000)
+                y_values.append(value[1]/1000)
+        
+            # Render an image of the accummulated image of all the coordinates
+            pg.plot(x_values, y_values, pen=None, symbol='o')
+            status = app.exec_()
+            sys.exit(status)
     gc.collect()
