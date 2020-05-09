@@ -13,6 +13,10 @@ import gc
 from datetime import datetime
 from PyQt5 import QtWidgets
 import pyqtgraph as pg
+from sklearn.cluster import DBSCAN
+from sklearn.cluster import KMeans
+from sklearn import metrics
+import matplotlib.pyplot as plt
 
 # Parse a scan (one rotation recording by the lidar), extracting the distance (x)
 def parse_scan(line):
@@ -216,19 +220,66 @@ with open('file2.ubh') as recording:
 
     # Iterate through each scan
     for i, scan in enumerate(coordinates):
-        x_values = []
-        y_values = []
+        values = []
 
-        if i == 300:
-            # Iterate through each coordinate in a scan
-            for value in scan:
-                # Since the train in the simulation is traveling right to left (pos x to neg x)
-                # the offset needs to be added to the x value
-                x_values.append(value[0]/1000)
-                y_values.append(value[1]/1000)
-        
-            # Render an image of the accummulated image of all the coordinates
-            pg.plot(x_values, y_values, pen=None, symbol='o')
-            status = app.exec_()
-            sys.exit(status)
+
+        # Iterate through each coordinate in a scan
+        for value in scan:
+            # Since the train in the simulation is traveling right to left (pos x to neg x)
+            # the offset needs to be added to the x value
+            values.append([value[0]/1000, value[1]/1000])
+    
+        values = np.array(values)
+
+
+        # Render an image of the accummulated image of all the coordinates
+        clustering = DBSCAN(eps=0.3, min_samples=2).fit(values)
+
+        core_samples_mask = np.zeros_like(clustering.labels_, dtype=bool)
+        core_samples_mask[clustering.core_sample_indices_] = True
+        labels = clustering.labels_
+
+        # Number of clusters in labels, ignoring noise if present.
+        n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
+        n_noise_ = list(labels).count(-1)
+
+        print('Estimated number of clusters: %d' % n_clusters_)
+        print('Estimated number of noise points: %d' % n_noise_)
+        print("Silhouette Coefficient: %0.3f"
+            % metrics.silhouette_score(values, labels))
+
+        # Black removed and is used for noise instead.
+        unique_labels = set(labels)
+        colors = [plt.cm.get_cmap("Spectral")(each)
+                for each in np.linspace(0, 1, len(unique_labels))]
+        for k, col in zip(unique_labels, colors):
+            if k == -1:
+                # Black used for noise.
+                col = [0, 0, 0, 1]
+
+            class_member_mask = (labels == k)
+
+            xy = values[class_member_mask & core_samples_mask]
+            plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=tuple(col),
+                    markeredgecolor='k', markersize=14)
+
+            xy = values[class_member_mask & ~core_samples_mask]
+            plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=tuple(col),
+                    markeredgecolor='k', markersize=6)
+        plt.ylim(0, 4)
+        plt.title('Estimated number of clusters: %d' % n_clusters_)
+        plt.savefig('file - %d' % i)
+        pdb.set_trace()
+        plt.close()
+
+        # pdb.set_trace()
+            # pg.plot(values, pen=None, symbol='o')
+            # status = app.exec_()
+            # sys.exit(status)
     gc.collect()
+
+# >>> clustering.labels_
+# array([ 0,  0,  0,  1,  1, -1])
+# >>> clustering
+# DBSCAN(eps=3, min_samples=2)
+
