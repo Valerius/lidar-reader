@@ -17,6 +17,7 @@ from sklearn.cluster import DBSCAN
 from sklearn.cluster import KMeans
 from sklearn import metrics
 import matplotlib.pyplot as plt
+from itertools import product
 
 # Parse a scan (one rotation recording by the lidar), extracting the distance (x)
 def parse_scan(line):
@@ -177,6 +178,20 @@ def calculate_total_timespan(timestamps):
 def calculate_accelleration_per_ms(v1, v2, timespan):
     return (v2 - v1) / (timespan)
 
+def calculate_coordinate_distance(x1, x2, y1, y2):
+    return m.sqrt(
+        (max(x1, x2) - min(x1, x2))**2 + (max(y1, y2) - min(y1, y2))**2
+    )
+
+def get_closest_centroids(centroids, previous_centroids):
+    smallest_distance = 0
+    for i, c in enumerate(centroids):
+        for j, pc in enumerate(previous_centroids):
+            distance = calculate_coordinate_distance(c[0], pc[0], c[1], pc[1])
+            if distance < smallest_distance or (i == 0 and j == 0):
+                smallest_distance = distance
+    return smallest_distance
+
 # Open UBH file
 with open('file2.ubh') as recording:
     # Parse recording for records, timestamps and the amount of records
@@ -218,26 +233,53 @@ with open('file2.ubh') as recording:
 
     app = QtWidgets.QApplication(sys.argv)
 
+
+    means = []
+    previous_means = []
+    centroid_distances = []
+
     # Iterate through each scan
     for i, scan in enumerate(coordinates):
         values = []
+        clusters = []
+        
+        # previous_velocity
 
 
         # Iterate through each coordinate in a scan
         for value in scan:
             # Since the train in the simulation is traveling right to left (pos x to neg x)
             # the offset needs to be added to the x value
-            values.append([value[0]/1000, value[1]/1000])
+            values.append([value[0], value[1]])
     
         values = np.array(values)
 
 
         # Render an image of the accummulated image of all the coordinates
-        clustering = DBSCAN(eps=0.3, min_samples=2).fit(values)
+        clustering = DBSCAN(eps=300, min_samples=2).fit(values)
 
         core_samples_mask = np.zeros_like(clustering.labels_, dtype=bool)
         core_samples_mask[clustering.core_sample_indices_] = True
         labels = clustering.labels_
+
+        cluster = []
+        previous_label = 0
+        for label, value in zip(labels, values):
+            if label == -1:
+                pass
+            elif label == previous_label:
+                cluster.append((value[0], value[1]))
+            elif label > previous_label:
+                previous_label = label
+                clusters.append(cluster)
+                cluster = []
+                cluster.append((value[0], value[1]))
+        for cluster in clusters:
+            x = [p[0] for p in cluster]
+            y = [p[1] for p in cluster]
+
+            mean = (sum(x) / len(cluster), sum(y) / len(cluster))
+            means.append(mean)
 
         # Number of clusters in labels, ignoring noise if present.
         n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
@@ -249,34 +291,49 @@ with open('file2.ubh') as recording:
             % metrics.silhouette_score(values, labels))
 
         # Black removed and is used for noise instead.
-        unique_labels = set(labels)
-        colors = [plt.cm.get_cmap("Spectral")(each)
-                for each in np.linspace(0, 1, len(unique_labels))]
-        for k, col in zip(unique_labels, colors):
-            if k == -1:
-                # Black used for noise.
-                col = [0, 0, 0, 1]
+        # unique_labels = set(labels)
+        # colors = [plt.cm.get_cmap("Spectral")(each)
+        #         for each in np.linspace(0, 1, len(unique_labels))]
+        # for k, col in zip(unique_labels, colors):
+        #     if k == -1:
+        #         # Black used for noise.
+        #         col = [0, 0, 0, 1]
 
-            class_member_mask = (labels == k)
+        #     class_member_mask = (labels == k)
 
-            xy = values[class_member_mask & core_samples_mask]
-            plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=tuple(col),
-                    markeredgecolor='k', markersize=14)
+        #     xy = values[class_member_mask & core_samples_mask]
+        #     plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=tuple(col),
+        #             markeredgecolor='k', markersize=14)
 
-            xy = values[class_member_mask & ~core_samples_mask]
-            plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=tuple(col),
-                    markeredgecolor='k', markersize=6)
-        plt.ylim(0, 4)
-        plt.title('Estimated number of clusters: %d' % n_clusters_)
-        plt.savefig('file - %d' % i)
-        pdb.set_trace()
-        plt.close()
+        #     xy = values[class_member_mask & ~core_samples_mask]
+        #     plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=tuple(col),
+        #             markeredgecolor='k', markersize=6)
 
-        # pdb.set_trace()
-            # pg.plot(values, pen=None, symbol='o')
-            # status = app.exec_()
-            # sys.exit(status)
-    gc.collect()
+        # for mean in means:
+        #     plt.plot(mean[0], mean[1], 'o', markerfacecolor='pink', markeredgecolor='k', markersize=14)
+
+        # if previous_means != []:
+        #     for pm in previous_means:
+        #         plt.plot(pm[0], pm[1], 'o', markerfacecolor='plum', markeredgecolor='k', markersize=8)
+
+        # plt.ylim(0, 4000)
+        # #plt.title('Estimated number of clusters: %d' % n_clusters_)
+        # plt.savefig('snapshots/file - %d' % i)
+        # plt.close()
+        ccd = get_closest_centroids(means, previous_means)
+        centroid_distances.append(ccd)
+
+        print('Closest centroid distance: %d' % ccd)
+        previous_means = means
+        means = []
+
+    # plt.figure(figsize=(150,50))
+    # #plt.ylim(0, 550)
+    # plt.plot(np.arange(len(centroid_distances)), centroid_distances, linestyle='--', marker='o', color='b')
+    # plt.xticks(np.arange(len(centroid_distances)))
+    # plt.savefig('distances')
+    # plt.close()
+    pdb.set_trace()
 
 # >>> clustering.labels_
 # array([ 0,  0,  0,  1,  1, -1])
