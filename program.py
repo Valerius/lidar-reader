@@ -231,7 +231,7 @@ with open('file2.ubh') as recording:
     colors = [(0,0,0)]
     area = np.pi*3
 
-    app = QtWidgets.QApplication(sys.argv)
+    #app = QtWidgets.QApplication(sys.argv)
 
 
     means = []
