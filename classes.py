@@ -15,27 +15,33 @@ class Recording:
     self.coordinates = coordinates
     self.timestamps = timestamps
     self.scans = []
+    self.clustered = False
 
   def create_scan(self, scan_coordinates, timestamp, index):
     return Scan(scan_coordinates, timestamp, index)
 
   def create_scans(self):
-    result = []
     for i, (c, t) in enumerate(zip(self.coordinates, self.timestamps)):
-      result.append(self.create_scan(c, t, i))
-    self.scans = result
+      self.scans.append(self.create_scan(c, t, i))
 
   def create_clustered_scans(self):
     if self.scans == []:
       self.create_scans()
     for scan in self.scans:
       scan.create_clusters()
+    self.clustered = True
 
   def render_scans(self):
     if self.scans == []:
       self.create_scans()
     for scan in self.scans:
       scan.render()
+
+  def render_clustered_scans(self):
+    if self.scans == [] or not self.clustered:
+      self.create_clustered_scans()
+    for scan in self.scans:
+      scan.render_clusters()
 
 class Scan:
   def __init__(self, coordinates, timestamp, index):
@@ -44,6 +50,7 @@ class Scan:
     self.index = index
     self.clustering = None
     self.clusters = []
+    self.outliers = []
 
   def create_coordinates(self, coordinates):
     result = []
@@ -66,6 +73,8 @@ class Scan:
           previous_label = label
           cluster_coordinates = []
         cluster_coordinates.append(coordinate)
+      else:
+        self.outliers.append(coordinate)
 
   def render(self):
     x = [c.x for c in self.coordinates]
@@ -75,6 +84,19 @@ class Scan:
       'snapshots/scan-%d' % self.index
     )
     
+  def render_clusters(self):
+    if self.clusters == []:
+      self.create_clusters()
+
+    rendering.render_clustered_scan(
+      self.clustering,
+      self.outliers,
+      self.clusters,
+      0,
+      4000,
+      'Clustered scan: %d' % self.index,
+      'clustered-snapshots/scan-%d' % self.index
+    )
 
 class Coordinate:
   def __init__(self, x, y):
@@ -94,11 +116,8 @@ class Cluster:
 
 class Centroid:
   def __init__(self, coordinates):
-    x_coordinates = [xc.x for xc in coordinates]
-    y_coordinates = [xc.y for xc in coordinates]
-    self.x = self.get_centroid(x_coordinates)
-    self.y = self.get_centroid(y_coordinates)
+    self.x = self.get_centroid([xc.x for xc in coordinates])
+    self.y = self.get_centroid([xc.y for xc in coordinates])
 
   def get_centroid(self, coordinates):
     return sum(coordinates) / len(coordinates)
-
