@@ -134,3 +134,10 @@ file.ubh
 # Rendered images
 snapshots/*
 clustered-snapshots/*
+*.png
+
+# Ubh files
+*.ubh
+
+# Output files
+*.txt
