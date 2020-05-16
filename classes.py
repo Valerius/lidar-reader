@@ -72,6 +72,9 @@ class Recording:
       previous_scan = scan
     return result
 
+class RecordingWithScans(object):
+  pass
+
 # Scan class
 class Scan:
   def __init__(self, coordinates, timestamp, index):
@@ -144,9 +147,6 @@ class ClusteredScan(Scan):
     previous_scan.build_clusters()
     return clustering.find_closest_clusters(self.clusters, previous_scan.clusters)
 
-
-
-
 class Cluster:
   def __init__(self, coordinates, label):
     self.coordinates = coordinates
@@ -164,3 +164,8 @@ class Cluster:
   def get_x_centroid(self, amount):
     x = [c[0] for c in self.coordinates]
     return sum(x) / amount
+
+class Coordinate:
+  def __init__(self, x, y):
+    self.x = x
+    self.y = y
