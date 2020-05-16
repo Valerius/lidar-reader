@@ -25,34 +25,6 @@ def get_recording():
   coordinates = get_coordinates(processed_recording)
   return Recording(coordinates, processed_recording['timestamps'])
 
-def render_scans():
+def enter_program():
   recording = get_recording()
-  amount = recording.render_scans()
-  print('Success! %d scans rendered' % amount)
-
-def render_clustered_scans():
-  recording = get_recording()
-  amount = recording.render_clustered_scans()
-  print('Success! %d clustered scans rendered' % amount)
-
-def print_centroids():
-  recording = get_recording()
-  recording.get_centroids() 
-  for scan_centroids in recording.centroids:
-    print(scan_centroids)
-
-def print_centroid_differences():
-  recording = get_recording()
-  recording.get_centroids()
-  results = recording.get_minimal_centroid_differences()
-  for result in results:
-    print(result)
-
-def print_matching_clusters():
-  recording = get_recording()
-  recording.get_centroids()
-  results = recording.get_matching_clusters()
-  for result in results:
-    print(result)
-
-
+  pdb.set_trace()

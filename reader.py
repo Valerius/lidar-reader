@@ -13,16 +13,16 @@ parser.add_argument('-pf', '--parse-file', help='parse a ubh-file', action='stor
 # Option to get coordinates of distances in file
 #parser.add_argument('-gc', '--get-coordinates', help='get coordinates of distances in a ubh file', action='store_true')
 # Option to render the scans belonging to a ubh file
-parser.add_argument('-rs', '--render-scans', help='render scans belonging to a ubh file', action='store_true')
-# Option to render the scans belonging to a ubh file with clusters
-parser.add_argument('-rc', '--render-clusters', help='render scans belonging to a ubh file with clusters', action='store_true')
-# Option to print centroids for each scan cluster
-parser.add_argument('-pc', '--print-centroids', help='print centroids for each scan cluster', action='store_true')
-# Option to print minimal centroid differences for each scan
-parser.add_argument('-pcd', '--print-centroid-differences', help='print minimal centroid differences for each scan', action='store_true')
-# Option to print all matching clusters
-parser.add_argument('-pmc', '--print-matching-clusters', help='print all matching clusters', action='store_true')
-
+# parser.add_argument('-rs', '--render-scans', help='render scans belonging to a ubh file', action='store_true')
+# # Option to render the scans belonging to a ubh file with clusters
+# parser.add_argument('-rc', '--render-clusters', help='render scans belonging to a ubh file with clusters', action='store_true')
+# # Option to print centroids for each scan cluster
+# parser.add_argument('-pc', '--print-centroids', help='print centroids for each scan cluster', action='store_true')
+# # Option to print minimal centroid differences for each scan
+# parser.add_argument('-pcd', '--print-centroid-differences', help='print minimal centroid differences for each scan', action='store_true')
+# # Option to print all matching clusters
+# parser.add_argument('-pmc', '--print-matching-clusters', help='print all matching clusters', action='store_true')
+parser.add_argument('-ep', '--enter-program', help='enter program', action='store_true')
 
 
 # Read arguments specified by user
@@ -37,15 +37,7 @@ if args.parse_file:
 #   with open('coordinates.txt', 'w') as f:
 #     with redirect_stdout(f):
 #       print(main.get_coordinates())
-elif args.render_scans:
-  main.render_scans()
-elif args.render_clusters:
-  main.render_clustered_scans()
-elif args.print_centroids:
-  main.print_centroids()
-elif args.print_centroid_differences:
-  main.print_centroid_differences()
-elif args.print_matching_clusters:
-  main.print_matching_clusters()
+elif args.enter_program:
+  main.enter_program()
 
 

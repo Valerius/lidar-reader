@@ -14,91 +14,48 @@ class Recording:
   def __init__(self, coordinates, timestamps):
     self.coordinates = coordinates
     self.timestamps = timestamps
-    self.centroids = []
     self.scans = []
 
-  def build_clustered_scans(self):
-    for timestamp in self.timestamps:
-      self.scans.append(self.create_clustered_scan_from_timestamp(timestamp))
-  
-  def create_scan_from_timestamp(self, timestamp):
-    index = self.timestamps.index(timestamp)
-    return Scan(self.coordinates[index], timestamp, index)
+  def create_scan(self, scan_coordinates, timestamp, index):
+    return Scan(scan_coordinates, timestamp, index)
 
-  def create_clustered_scan_from_timestamp(self, timestamp):
-    index = self.timestamps.index(timestamp)
-    return ClusteredScan(self.coordinates[index], timestamp, index)
+  def create_scans(self):
+    result = []
+    for i, (c, t) in enumerate(zip(self.coordinates, self.timestamps)):
+      result.append(self.create_scan(c, t, i))
+    self.scans = result
 
-  def create_scan_from_index(self, index):
-    return Scan(self.coordinates[index], self.timestamps[index], index)
+  def create_clustered_scans(self):
+    if self.scans == []:
+      self.create_scans()
+    for scan in self.scans:
+      scan.create_clusters()
 
   def render_scans(self):
-    for timestamp in self.timestamps:
-      scan = self.create_scan_from_timestamp(timestamp)
-      scan.render_scan()
-    return len(self.timestamps)
-  
-  def render_clustered_scans(self):
-    for timestamp in self.timestamps:
-      scan = self.create_clustered_scan_from_timestamp(timestamp)
-      scan.render_clustered_scan()
-    return len(self.timestamps)
-  
-  def get_centroids(self):
-    for timestamp in self.timestamps:
-      scan = self.create_clustered_scan_from_timestamp(timestamp)
-      scan.get_centroids()
-      self.centroids.append(scan.centroids)
+    if self.scans == []:
+      self.create_scans()
+    for scan in self.scans:
+      scan.render()
 
-  def get_minimal_centroid_differences(self):
-    result = []
-    if self.get_centroids == []:
-      self.get_centroids()
-    previous_scan_centroids = None
-
-    for scan_centroids in self.centroids:
-      if previous_scan_centroids != None:
-        result.append(clustering.get_closest_centroids(scan_centroids, previous_scan_centroids))
-      previous_scan_centroids = scan_centroids
-    return result
-
-  def get_matching_clusters(self):
-    self.build_clustered_scans()
-    result = []
-    previous_scan = None
-    for i, scan in enumerate(self.scans):
-      if i > 0:
-        result.append(scan.calculate_jaccard_similarity(previous_scan))
-      previous_scan = scan
-    return result
-
-class RecordingWithScans(object):
-  pass
-
-# Scan class
 class Scan:
   def __init__(self, coordinates, timestamp, index):
-    self.coordinates = np.array(coordinates)
+    self.coordinates = self.create_coordinates(coordinates)
     self.timestamp = timestamp
     self.index = index
-
-  def render_scan(self):
-    x = [s[0] for s in self.coordinates]
-    y = [s[1] for s in self.coordinates]
-    plt.scatter(x, y)
-    plt.ylim(0, 4000)
-    plt.title('Scan: %d' % self.index)
-    plt.savefig('snapshots/scan-%d' % self.index)
-    plt.close()
-
-class ClusteredScan(Scan):
-  def __init__(self, coordinates, timestamp, index):
-    super().__init__(coordinates, timestamp, index)
-    self.clustering = DBSCAN(eps=300, min_samples=2).fit(self.coordinates)
+    self.clustering = None
     self.clusters = []
-    self.centroids = []
 
-  def build_clusters(self):
+  def create_coordinates(self, coordinates):
+    result = []
+    for coordinate in coordinates:
+      result.append(Coordinate(coordinate[0], coordinate[1]))
+    return np.array(result)
+
+  def cluster(self):
+    self.clustering = DBSCAN(eps=300, min_samples=2).fit([(c.x, c.y) for c in self.coordinates])
+
+  def create_clusters(self):
+    self.cluster()
     previous_label = 0
     cluster_coordinates = []
 
@@ -110,62 +67,38 @@ class ClusteredScan(Scan):
           cluster_coordinates = []
         cluster_coordinates.append(coordinate)
 
-  def get_centroids(self):
-    self.build_clusters()
-    for cluster in self.clusters:
-      self.centroids.append(cluster.get_centroid())
-
-  def render_clustered_scan(self):
-    core_samples_mask = np.zeros_like(self.clustering.labels_, dtype=bool)
-    core_samples_mask[self.clustering.core_sample_indices_] = True
-    labels = self.clustering.labels_
-
-    # Black removed and is used for noise instead.
-    unique_labels = set(labels)
-    colors = rendering.get_colors(unique_labels)
-
-    for k, col in zip(unique_labels, colors):
-        if k == -1:
-            # Black used for noise.
-            col = [0, 0, 0, 1]
-
-        class_member_mask = (labels == k)
-        #pdb.set_trace()
-        xy = self.coordinates[class_member_mask & core_samples_mask]
-        plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=tuple(col),
-                markeredgecolor='k', markersize=14)
-
-        xy = self.coordinates[class_member_mask & ~core_samples_mask]
-        plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=tuple(col),
-                markeredgecolor='k', markersize=6)
-    plt.title('Clustered scan: %d' % self.index)
-    plt.savefig('clustered-snapshots/scan-%d' % self.index)
-    plt.close()
-
-  def calculate_jaccard_similarity(self, previous_scan):
-    self.build_clusters()
-    previous_scan.build_clusters()
-    return clustering.find_closest_clusters(self.clusters, previous_scan.clusters)
-
-class Cluster:
-  def __init__(self, coordinates, label):
-    self.coordinates = coordinates
-    self.label = label
-
-  def get_centroid(self):
-    amount = len(self.coordinates)
-    if amount != 0:
-      return (self.get_x_centroid(amount), self.get_y_centroid(amount))
-  
-  def get_y_centroid(self, amount):
-    y = [c[1] for c in self.coordinates]
-    return sum(y) / amount
-  
-  def get_x_centroid(self, amount):
-    x = [c[0] for c in self.coordinates]
-    return sum(x) / amount
+  def render(self):
+    x = [c.x for c in self.coordinates]
+    y = [c.y for c in self.coordinates]
+    rendering.render_scatter_plot(
+      x, y, 0, 4000, 'Scan: %d' % self.index,
+      'snapshots/scan-%d' % self.index
+    )
+    
 
 class Coordinate:
   def __init__(self, x, y):
     self.x = x
     self.y = y
+
+class Cluster:
+  def __init__(self, coordinates, label):
+    self.coordinates = coordinates
+    self.label = label
+    self.centroid = self.get_centroid(coordinates)
+
+  def get_centroid(self, coordinates):
+    amount = len(coordinates)
+    if amount != 0:
+      return Centroid(coordinates)
+
+class Centroid:
+  def __init__(self, coordinates):
+    x_coordinates = [xc.x for xc in coordinates]
+    y_coordinates = [xc.y for xc in coordinates]
+    self.x = self.get_centroid(x_coordinates)
+    self.y = self.get_centroid(y_coordinates)
+
+  def get_centroid(self, coordinates):
+    return sum(coordinates) / len(coordinates)
+
