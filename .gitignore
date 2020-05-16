@@ -140,4 +140,4 @@ clustered-snapshots/*
 *.ubh
 
 # Output files
-*.txt
+parse-file.txt
