@@ -5,7 +5,7 @@ from classes import *
 # Get a parsed ubh file
 def get_parsed_ubh_file():
   # Open UBH file
-  with open('file2.ubh') as recording:
+  with open('file.ubh') as recording:
     # Parse recording for records, timestamps and the amount of records
     return parsing.get_timestamps_and_scans(recording)
 

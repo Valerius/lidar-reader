@@ -52,6 +52,15 @@ class Scan:
     self.clusters = []
     self.outliers = []
 
+  def coordinates_to_list(self):
+    return [(c.x, c.y) for c in self.coordinates]
+  
+  def x_coordinates_to_list(self):
+    return [c.x for c in self.coordinates]
+
+  def y_coordinates_to_list(self):
+    return [c.y for c in self.coordinates]
+
   def create_coordinates(self, coordinates):
     result = []
     for coordinate in coordinates:
@@ -59,7 +68,7 @@ class Scan:
     return np.array(result)
 
   def cluster(self):
-    self.clustering = DBSCAN(eps=300, min_samples=2).fit([(c.x, c.y) for c in self.coordinates])
+    self.clustering = DBSCAN(eps=300, min_samples=2).fit(self.coordinates_to_list())
 
   def create_clusters(self):
     self.cluster()
@@ -77,10 +86,9 @@ class Scan:
         self.outliers.append(coordinate)
 
   def render(self):
-    x = [c.x for c in self.coordinates]
-    y = [c.y for c in self.coordinates]
     rendering.render_scatter_plot(
-      x, y, 0, 4000, 'Scan: %d' % self.index,
+      self.x_coordinates_to_list(), self.y_coordinates_to_list(),
+      0, 4000, 'Scan: %d' % self.index,
       'snapshots/scan-%d' % self.index
     )
     
@@ -102,6 +110,13 @@ class Coordinate:
   def __init__(self, x, y):
     self.x = x
     self.y = y
+
+# class CoordinatesList:
+#   def __init__(self, coordinates):
+#     self.coordinates = []
+
+#   def create_(parameter_list):
+#     pass
 
 class Cluster:
   def __init__(self, coordinates, label):
