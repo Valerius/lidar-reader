@@ -1,3 +1,12 @@
+# This code uses the NumPy library. We are thankful for the usage of this library. Citation below.
+@book{oliphant2006guide,
+  title={A guide to NumPy},
+  author={Oliphant, Travis E},
+  volume={1},
+  year={2006},
+  publisher={Trelgol Publishing USA}
+}
+
 import matplotlib.pyplot as plt
 # Stats library
 import numpy as np
@@ -14,7 +23,6 @@ def render_scatter_plot(x, y, ymin, ymax, title, savefig):
   plt.close()
 
 def render_clustered_scan(clustering, outliers, clusters, ymin, ymax, title, savefig):
-  pdb.set_trace()
   colors = get_colors(len(clusters))
   for outlier in outliers:
     plt.plot(outlier.x, outlier.y, 'o', markerfacecolor=tuple([0, 0, 0, 1]),
@@ -30,6 +38,24 @@ def render_clustered_scan(clustering, outliers, clusters, ymin, ymax, title, sav
   plt.title(title)
   plt.savefig(savefig)
   plt.close()
+
+def render_matching_clusters(cluster1, cluster2, title, savefig):
+  colors = get_colors(2)
+
+  for coordinate in cluster1.coordinates:
+    plt.plot(coordinate.x, coordinate.y, 'o', markerfacecolor=colors[0],
+      markeredgecolor='k', markersize=6
+    )
+
+  for coordinate in cluster2.coordinates:
+    plt.plot(coordinate.x, coordinate.y, 'o', markerfacecolor=colors[1],
+      markeredgecolor='k', markersize=6
+    )
+  
+  plt.title(title)
+  plt.savefig(savefig)
+  plt.close()
+    
 
 # def render_clustered_scan(self):
 #   core_samples_mask = np.zeros_like(self.clustering.labels_, dtype=bool)
