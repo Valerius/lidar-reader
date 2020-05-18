@@ -1,11 +1,11 @@
-# This code uses the NumPy library. We are thankful for the usage of this library. Citation below.
-@book{oliphant2006guide,
-  title={A guide to NumPy},
-  author={Oliphant, Travis E},
-  volume={1},
-  year={2006},
-  publisher={Trelgol Publishing USA}
-}
+# # This code uses the NumPy library. We are thankful for the usage of this library. Citation below.
+# @book{oliphant2006guide,
+#   title={A guide to NumPy},
+#   author={Oliphant, Travis E},
+#   volume={1},
+#   year={2006},
+#   publisher={Trelgol Publishing USA}
+# }
 
 import matplotlib.pyplot as plt
 # Stats library

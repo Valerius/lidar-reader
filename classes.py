@@ -1,36 +1,35 @@
-# This code uses the similaritymeasures library for comparing functions. We are thankful for the usage of this library. Citation below.
-@article{Jekel2019,
-  author = {Jekel, Charles F and Venter, Gerhard and Venter, Martin P and Stander, Nielen and Haftka, Raphael T},
-  doi = {10.1007/s12289-018-1421-8},
-  issn = {1960-6214},
-  journal = {International Journal of Material Forming},
-  month = {may},
-  title = {{Similarity measures for identifying material parameters from hysteresis loops using inverse analysis}},
-  url = {https://doi.org/10.1007/s12289-018-1421-8},
-  year = {2019}
-}
+# # This code uses the similaritymeasures library for comparing functions. We are thankful for the usage of this library. Citation below.
+# @article{Jekel2019,
+#   author = {Jekel, Charles F and Venter, Gerhard and Venter, Martin P and Stander, Nielen and Haftka, Raphael T},
+#   doi = {10.1007/s12289-018-1421-8},
+#   issn = {1960-6214},
+#   journal = {International Journal of Material Forming},
+#   month = {may},
+#   url = {https://doi.org/10.1007/s12289-018-1421-8},
+#   year = {2019}
+# }
 
-# This code uses the scikit-learn library. We are thankful for the usage of this library. Citation below.
-@article{scikit-learn,
-  title={Scikit-learn: Machine Learning in {P}ython},
-  author={Pedregosa, F. and Varoquaux, G. and Gramfort, A. and Michel, V.
-          and Thirion, B. and Grisel, O. and Blondel, M. and Prettenhofer, P.
-          and Weiss, R. and Dubourg, V. and Vanderplas, J. and Passos, A. and
-          Cournapeau, D. and Brucher, M. and Perrot, M. and Duchesnay, E.},
-  journal={Journal of Machine Learning Research},
-  volume={12},
-  pages={2825--2830},
-  year={2011}
-}
+# # This code uses the scikit-learn library. We are thankful for the usage of this library. Citation below.
+# @article{scikit-learn,
+#   title={Scikit-learn: Machine Learning in {P}ython},
+#   author={Pedregosa, F. and Varoquaux, G. and Gramfort, A. and Michel, V.
+#           and Thirion, B. and Grisel, O. and Blondel, M. and Prettenhofer, P.
+#           and Weiss, R. and Dubourg, V. and Vanderplas, J. and Passos, A. and
+#           Cournapeau, D. and Brucher, M. and Perrot, M. and Duchesnay, E.},
+#   journal={Journal of Machine Learning Research},
+#   volume={12},
+#   pages={2825--2830},
+#   year={2011}
+# }
 
-# This code uses the NumPy library. We are thankful for the usage of this library. Citation below.
-@book{oliphant2006guide,
-  title={A guide to NumPy},
-  author={Oliphant, Travis E},
-  volume={1},
-  year={2006},
-  publisher={Trelgol Publishing USA}
-}
+# # This code uses the NumPy library. We are thankful for the usage of this library. Citation below.
+# @book{oliphant2006guide,
+#   title={A guide to NumPy},
+#   author={Oliphant, Travis E},
+#   volume={1},
+#   year={2006},
+#   publisher={Trelgol Publishing USA}
+# }
 
 import matplotlib.pyplot as plt
 # For debugging purposes
