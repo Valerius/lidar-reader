@@ -52,7 +52,7 @@ class Recording:
     self.scans = []
     self.clustered = False
     self.matching_clusters = []
-    self.delta = []
+    self.deltas = []
 
   def create_scan(self, scan_coordinates, timestamp, index):
     return Scan(scan_coordinates, timestamp, index)
@@ -95,13 +95,19 @@ class Recording:
       if match != None:
         rendering.render_matching_clusters(match[0], match[1], 'Scan: %d' % index, 'matching-clusters/%d' % index)
       
-  def calculate_delta(self):
+  def calculate_deltas(self):
     self.match_clusters()
     for match in self.matching_clusters:
       if match != None:
-        self.delta.append(clustering.calculate_cluster_distance(match[0], match[1]))
+        self.deltas.append(clustering.calculate_cluster_distance(match[0], match[1]))
       else:
-        self.delta.append(None)
+        self.deltas.append(None)
+
+  def render_delta(self):
+    self.calculate_deltas()
+    rendering.render_linegraph(self.deltas)
+      
+
 
 class Scan:
   def __init__(self, coordinates, timestamp, index):

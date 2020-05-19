@@ -55,6 +55,16 @@ def render_matching_clusters(cluster1, cluster2, title, savefig):
   plt.title(title)
   plt.savefig(savefig)
   plt.close()
+
+def render_linegraph(lst):
+  for index, item in enumerate(lst):
+    if item != None and item < 1000:
+      plt.plot(index, item, 'o', markerfacecolor=tuple([0, 0, 0, 1]),
+        markeredgecolor='k', markersize=6
+      )
+  plt.title('distances')
+  plt.savefig('distances')
+  plt.close()
     
 
 # def render_clustered_scan(self):
