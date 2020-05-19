@@ -65,7 +65,20 @@ def render_linegraph(lst):
   plt.title('distances')
   plt.savefig('distances')
   plt.close()
-    
+
+# def render_train_recording(self):
+# # Lege plot ophalen met bepaalde verhouding, zodat het op een trein lijkt
+# recording = render_scatter_plot(0, 0, ymin, ymax, "Recording", savefig)
+# # Scans ophalen en over itereren
+#   for rotation in rotations:
+# # Eerst acceleratie van trein ophalen tussen 2 scans en vervolgens berekenen hoeveel x-as veranderd
+#     acceleration = calculate_cluster_acceleration(vorige scan, huidige scan)
+# # Voeg huidige acceleratie toe aan x-as
+#     x += acceleration
+# # Per rotation de scan ophalen en toevoegen aan een variabele van een plaatje
+#     rotation.append(recording)
+# # Aan einde van alle rotations plot renderen en opslaan
+# recording.save()
 
 # def render_clustered_scan(self):
 #   core_samples_mask = np.zeros_like(self.clustering.labels_, dtype=bool)
