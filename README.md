@@ -1,2 +1,2 @@
 # lidar-reader
-This program aims to read UBH files, produced by a LIDAR.
+This program reads UBH files, produced by a LIDAR.

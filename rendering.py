@@ -63,7 +63,7 @@ def render_linegraph(lst):
         markeredgecolor='k', markersize=6
       )
   plt.title('distances')
-  plt.savefig('distances')
+  plt.savefig('distances/distances')
   plt.close()
 
 # def render_train_recording(self):
@@ -79,30 +79,3 @@ def render_linegraph(lst):
 #     rotation.append(recording)
 # # Aan einde van alle rotations plot renderen en opslaan
 # recording.save()
-
-# def render_clustered_scan(self):
-#   core_samples_mask = np.zeros_like(self.clustering.labels_, dtype=bool)
-#   core_samples_mask[self.clustering.core_sample_indices_] = True
-#   labels = self.clustering.labels_
-
-#   # Black removed and is used for noise instead.
-#   unique_labels = set(labels)
-#   colors = rendering.get_colors(unique_labels)
-
-#   for k, col in zip(unique_labels, colors):
-#       if k == -1:
-#           # Black used for noise.
-#           col = [0, 0, 0, 1]
-
-#       class_member_mask = (labels == k)
-#       #pdb.set_trace()
-#       xy = self.coordinates[class_member_mask & core_samples_mask]
-#       plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=tuple(col),
-#               markeredgecolor='k', markersize=14)
-
-#       xy = self.coordinates[class_member_mask & ~core_samples_mask]
-#       plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=tuple(col),
-#               markeredgecolor='k', markersize=6)
-#   plt.title('Clustered scan: %d' % self.index)
-#   plt.savefig('clustered-snapshots/scan-%d' % self.index)
-#   plt.close()

@@ -46,13 +46,12 @@ def compare_clusters(cluster1, cluster2):
   return similaritymeasures.area_between_two_curves(cluster1.coordinates_to_array(), cluster2.coordinates_to_array())
 
 def compare_scans(scan1, scan2):
-  print('scan: %d' % scan1.index)
   minimum_area = None
   minimum_clusters = None
   for c1 in scan1.clusters:
-    if len(c1.coordinates) > scan1.clusters_coordinates_second_quartile:
+    if len(c1.coordinates) > scan1.clusters_coordinates_last_decile:
       for c2 in scan2.clusters:
-        if len(c2.coordinates) > scan2.clusters_coordinates_second_quartile:
+        if len(c2.coordinates) > scan2.clusters_coordinates_last_decile:
           area = compare_clusters(c1, c2)
           if minimum_area == None or area < minimum_area:
             minimum_area = area
