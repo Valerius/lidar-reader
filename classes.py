@@ -78,11 +78,11 @@ class RecordingWithScans(Recording):
 class RecordingWithClusteredScans(RecordingWithScans):
   @classmethod
   def from_parent(cls, parent):
-    return cls(parent.coordinates, parent.timestamps)
+    return cls(parent.coordinates, parent.timestamps, parent.scan_list)
 
-  def __init__(self, coordinates, timestamps):
+  def __init__(self, coordinates, timestamps, scan_list):
     super(RecordingWithClusteredScans, self).__init__(coordinates, timestamps)
-    self.scan_list.cluster()
+    self.scan_list = ClusteredScanList.from_parent(coordinates, timestamps, scan_list)
 
 class Scan:
   def __init__(self, coordinates, timestamp, index):
@@ -144,8 +144,17 @@ class ScanList:
   def __init__(self, coordinates, timestamps):
     self.scans = list(Scan(c, t, i) for i, (c, t) in enumerate(zip(coordinates, timestamps)))
 
-  def cluster(self):
-    for index, scan in enumerate(self.scans):
+class ClusteredScanList(ScanList):
+  @classmethod
+  def from_parent(cls, coordinates, timestamps, parent):
+    return cls(coordinates, timestamps, parent.scans)
+
+  def __init__(self, coordinates, timestamps, scans):
+    super(ClusteredScanList, self).__init__(coordinates, timestamps)
+    self.cluster(scans)
+    
+  def cluster(self, scans):
+    for index, scan in enumerate(scans):
       self.scans[index] = scan.cluster()
 
 class Cluster:
