@@ -137,6 +137,16 @@ class ClusteredScan(Scan):
         self.outliers.append(coordinate)
     self.cluster_selection = np.percentile(cluster_coordinates_counts, 90)
 
+  def render(self):
+    rendering.render_clustered_scan(
+      self.clustering,
+      self.outliers,
+      self.clusters,
+      0,
+      4000,
+      'Clustered scan: %d' % self.index,
+      'clustered-snapshots/scan-%d' % self.index
+    )
 class Coordinate:
   def __init__(self, x, y):
     self.x = x
@@ -176,6 +186,10 @@ class ClusteredScanList(ScanList):
   def cluster(self, scans):
     for index, scan in enumerate(scans):
       self.scans[index] = scan.cluster()
+
+  def render(self):
+    for scan in self.scans:
+      scan.render()
 
   def match(self):
     previous_scan = None

@@ -29,7 +29,7 @@ def render_clustered_scan(clustering, outliers, clusters, ymin, ymax, title, sav
       markeredgecolor='k', markersize=6
     )
   for cluster, color in zip(clusters, colors):
-    for coordinate in cluster.coordinates:
+    for coordinate in cluster.coordinate_list.coordinates:
       plt.plot(coordinate.x, coordinate.y, 'o', markerfacecolor=tuple(color),
         markeredgecolor='k', markersize=14
       )
