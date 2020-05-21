@@ -84,6 +84,15 @@ class RecordingWithClusteredScans(RecordingWithScans):
     super(RecordingWithClusteredScans, self).__init__(coordinates, timestamps)
     self.scan_list = ClusteredScanList.from_parent(coordinates, timestamps, scan_list)
 
+  def match(self):
+    self.scan_list.match()
+
+  def delta_match(self):
+    self.scan_list.delta_match()
+
+  def render_delta_matches(self):
+    self.scan_list.render_delta_matches()
+
 class Scan:
   def __init__(self, coordinates, timestamp, index):
     self.coordinate_list = CoordinateList(coordinates)
@@ -135,10 +144,19 @@ class Coordinate:
 
 class CoordinateList:
   def __init__(self, coordinates):
-    self.coordinates = list(Coordinate(c[0], c[1]) for c in coordinates)
+    try:
+      self.coordinates = list(Coordinate(c[0], c[1]) for c in coordinates)
+    except:
+      self.coordinates = list(coordinates)
 
   def to_list(self):
     return list((c.x, c.y) for c in self.coordinates)
+
+  def to_array(self):
+    return np.array(self.to_list())
+
+  def len(self):
+    return len(self.coordinates)
 
 class ScanList:
   def __init__(self, coordinates, timestamps):
@@ -152,14 +170,44 @@ class ClusteredScanList(ScanList):
   def __init__(self, coordinates, timestamps, scans):
     super(ClusteredScanList, self).__init__(coordinates, timestamps)
     self.cluster(scans)
+    self.matches = list()
+    self.delta_matches = list()
     
   def cluster(self, scans):
     for index, scan in enumerate(scans):
       self.scans[index] = scan.cluster()
 
+  def match(self):
+    previous_scan = None
+    for scan in self.scans:
+      if previous_scan is not None:
+        self.matches.append(clustering.compare_scans(previous_scan, scan))
+      previous_scan = scan
+
+  def render_matches(self):
+    if not self.matches:
+      self.match()
+    for index, match in enumerate(self.matches):
+      if match != None:
+        rendering.render_matching_clusters(match[0], match[1], 'Scan: %d' % index, 'matching-clusters/%d' % index)
+
+  def delta_match(self):
+    if not self.matches:
+      self.match()
+    for match in self.matches:
+      if match is not None:
+        self.delta_matches.append(clustering.calculate_cluster_distance(match[0], match[1]))
+      else:
+        self.delta_matches.append(None)
+
+  def render_delta_matches(self):
+    if not self.delta_matches:
+      self.delta_match()
+    rendering.render_linegraph(self.delta_matches)
+
 class Cluster:
   def __init__(self, coordinates, label):
-    self.coordinates = coordinates
+    self.coordinate_list = CoordinateList(coordinates)
     self.label = label
     self.centroid = Centroid(coordinates)
 

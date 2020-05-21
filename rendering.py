@@ -42,12 +42,12 @@ def render_clustered_scan(clustering, outliers, clusters, ymin, ymax, title, sav
 def render_matching_clusters(cluster1, cluster2, title, savefig):
   colors = get_colors(2)
 
-  for coordinate in cluster1.coordinates:
+  for coordinate in cluster1.coordinate_list.coordinates:
     plt.plot(coordinate.x, coordinate.y, 'o', markerfacecolor=colors[0],
       markeredgecolor='k', markersize=6
     )
 
-  for coordinate in cluster2.coordinates:
+  for coordinate in cluster2.coordinate_list.coordinates:
     plt.plot(coordinate.x, coordinate.y, 'o', markerfacecolor=colors[1],
       markeredgecolor='k', markersize=6
     )
@@ -58,7 +58,7 @@ def render_matching_clusters(cluster1, cluster2, title, savefig):
 
 def render_linegraph(lst):
   for index, item in enumerate(lst):
-    if item != None and item < 1000:
+    if item != None and item > 50 and item < 500:
       plt.plot(index, item, 'o', markerfacecolor=tuple([0, 0, 0, 1]),
         markeredgecolor='k', markersize=6
       )
