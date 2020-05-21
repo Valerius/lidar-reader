@@ -57,11 +57,20 @@ def render_matching_clusters(cluster1, cluster2, title, savefig):
   plt.close()
 
 def render_linegraph(lst):
+  colors = get_colors(2)
+  points = []
   for index, item in enumerate(lst):
     if item != None and item > 50 and item < 500:
-      plt.plot(index, item, 'o', markerfacecolor=tuple([0, 0, 0, 1]),
+      points.append(item)
+      plt.plot(index, item, 'o', markerfacecolor=colors[0],
         markeredgecolor='k', markersize=6
       )
+
+  fitted_points = np.polynomial.Polynomial.fit(np.arange(len(points)), points, 3)
+  plt.plot(*fitted_points.linspace())
+  print(fitted_points)
+  print(fitted_points.linspace())
+
   plt.title('distances')
   plt.savefig('distances/distances')
   plt.close()

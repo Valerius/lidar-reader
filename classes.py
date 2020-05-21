@@ -102,6 +102,13 @@ class Scan:
   def cluster(self):
     return ClusteredScan.from_parent(self)
 
+  def render(self):
+    rendering.render_scatter_plot(
+      self.coordinate_list.x_to_list(), self.coordinate_list.y_to_list(),
+      0, 4000, 'Scan: %d' % self.index,
+      'snapshots/scan-%d' % self.index
+    )
+
 class ClusteredScan(Scan):
   @classmethod
   def from_parent(cls, parent):
@@ -125,9 +132,9 @@ class ClusteredScan(Scan):
     cluster_coordinates = []
     cluster_coordinates_counts = []
 
-    for label, coordinate in zip(clustering.labels_, coordinates):
+    for index, (label, coordinate) in enumerate(zip(clustering.labels_, coordinates)):
       if label >= 0:
-        if label > previous_label:
+        if label > previous_label or (index + 1) is len(clustering.labels_):
           cluster_coordinates_counts.append(len(cluster_coordinates))
           self.clusters.append(Cluster(cluster_coordinates, previous_label))
           previous_label = label
@@ -135,7 +142,7 @@ class ClusteredScan(Scan):
         cluster_coordinates.append(coordinate)
       else:
         self.outliers.append(coordinate)
-    self.cluster_selection = np.percentile(cluster_coordinates_counts, 90)
+    self.cluster_selection = np.percentile(cluster_coordinates_counts, 75)
 
   def render(self):
     rendering.render_clustered_scan(
@@ -147,6 +154,10 @@ class ClusteredScan(Scan):
       'Clustered scan: %d' % self.index,
       'clustered-snapshots/scan-%d' % self.index
     )
+
+  def render_scan(self):
+    super(ClusteredScan, self).render()
+
 class Coordinate:
   def __init__(self, x, y):
     self.x = x
@@ -162,6 +173,12 @@ class CoordinateList:
   def to_list(self):
     return list((c.x, c.y) for c in self.coordinates)
 
+  def x_to_list(self):
+    return list(c.x for c in self.coordinates)
+
+  def y_to_list(self):
+    return list(c.y for c in self.coordinates)
+
   def to_array(self):
     return np.array(self.to_list())
 
@@ -171,6 +188,10 @@ class CoordinateList:
 class ScanList:
   def __init__(self, coordinates, timestamps):
     self.scans = list(Scan(c, t, i) for i, (c, t) in enumerate(zip(coordinates, timestamps)))
+
+  def render(self):
+    for scan in self.scans:
+      scan.render()
 
 class ClusteredScanList(ScanList):
   @classmethod
@@ -182,6 +203,7 @@ class ClusteredScanList(ScanList):
     self.cluster(scans)
     self.matches = list()
     self.delta_matches = list()
+    self.fitted_delta_matches = list()
     
   def cluster(self, scans):
     for index, scan in enumerate(scans):
@@ -190,6 +212,10 @@ class ClusteredScanList(ScanList):
   def render(self):
     for scan in self.scans:
       scan.render()
+
+  def render_scans(self):
+    for scan in self.scans:
+      scan.render_scan()
 
   def match(self):
     previous_scan = None
@@ -219,6 +245,14 @@ class ClusteredScanList(ScanList):
       self.delta_match()
     rendering.render_linegraph(self.delta_matches)
 
+  def fitted_delta_match(self):
+    if not self.delta_matches:
+      self.delta_match()
+    
+    self.fitted_delta_matches = np.polynomial.Polynomial.fit(
+      np.arange(len(self.delta_matches)), self.delta_matches, 3
+    ).linspace(len(self.delta_matches))[1]
+
 class Cluster:
   def __init__(self, coordinates, label):
     self.coordinate_list = CoordinateList(coordinates)
@@ -231,7 +265,7 @@ class Centroid:
     self.y = self.get_centroid([xc.y for xc in coordinates])
 
   def get_centroid(self, coordinates):
-    return sum(coordinates) / len(coordinates)
+    return np.median(coordinates)
 
 
 # class Recording:
