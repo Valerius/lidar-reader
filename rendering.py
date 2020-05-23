@@ -11,18 +11,20 @@ import matplotlib.pyplot as plt
 # Stats library
 import numpy as np
 import pdb
+from pathlib import Path
 
 def get_colors(amount):
   return [plt.cm.get_cmap("Spectral")(each) for each in np.linspace(0, 1, amount)]
 
-def render_scatter_plot(x, y, ymin, ymax, title, savefig):
+def render_scatter_plot(x, y, ymin, ymax, title, savefig, directory):
   plt.scatter(x, y)
   plt.ylim(ymin, ymax)
   plt.title(title)
+  Path(directory).mkdir(parents=True, exist_ok=True)
   plt.savefig(savefig)
   plt.close()
 
-def render_clustered_scan(clustering, outliers, clusters, ymin, ymax, title, savefig):
+def render_clustered_scan(clustering, outliers, clusters, ymin, ymax, title, savefig, directory):
   colors = get_colors(len(clusters))
   for outlier in outliers:
     plt.plot(outlier.x, outlier.y, 'o', markerfacecolor=tuple([0, 0, 0, 1]),
@@ -36,10 +38,11 @@ def render_clustered_scan(clustering, outliers, clusters, ymin, ymax, title, sav
 
   plt.ylim(ymin, ymax)
   plt.title(title)
+  Path(directory).mkdir(parents=True, exist_ok=True)
   plt.savefig(savefig)
   plt.close()
 
-def render_matching_clusters(cluster1, cluster2, title, savefig):
+def render_matching_clusters(cluster1, cluster2, title, savefig, directory):
   colors = get_colors(2)
 
   for coordinate in cluster1.coordinate_list.coordinates:
@@ -53,6 +56,7 @@ def render_matching_clusters(cluster1, cluster2, title, savefig):
     )
   
   plt.title(title)
+  Path(directory).mkdir(parents=True, exist_ok=True)
   plt.savefig(savefig)
   plt.close()
 
@@ -70,6 +74,7 @@ def render_linegraph(lst):
   plt.plot(*fitted_points.linspace())
 
   plt.title('distances')
+  Path('distances').mkdir(parents=True, exist_ok=True)
   plt.savefig('distances/distances')
   plt.close()
 

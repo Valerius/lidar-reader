@@ -99,7 +99,8 @@ class Scan:
     rendering.render_scatter_plot(
       self.coordinate_list.x_to_list(), self.coordinate_list.y_to_list(),
       0, 4000, 'Scan: %d' % self.index,
-      'snapshots/scan-%d' % self.index
+      'snapshots/scan-%d' % self.index,
+      'snapshots'
     )
 
 class ClusteredScan(Scan):
@@ -145,7 +146,8 @@ class ClusteredScan(Scan):
       0,
       4000,
       'Clustered scan: %d' % self.index,
-      'clustered-snapshots/scan-%d' % self.index
+      'clustered-snapshots/scan-%d' % self.index,
+      'clustered-snapshots'
     )
 
   def render_scan(self):
@@ -228,7 +230,7 @@ class ClusteredScanList(ScanList):
       self.match()
     for index, match in enumerate(self.matches):
       if match != None:
-        rendering.render_matching_clusters(match[0], match[1], 'Scan: %d' % index, 'matching-clusters/%d' % index)
+        rendering.render_matching_clusters(match[0], match[1], 'Scan: %d' % index, 'matching-clusters/%d' % index, 'matching-clusters')
 
   def delta_match(self):
     if not self.matches:
