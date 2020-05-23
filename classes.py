@@ -179,6 +179,12 @@ class CoordinateList:
   def y_to_list(self):
     return list(c.y for c in self.coordinates)
 
+  def x_list_incr(self, incr):
+    return list(c.x + incr for c in self.coordinates)
+
+  def y_list_incr(self, incr):
+    return list(c.y + incr for c in self.coordinates)
+
   def to_array(self):
     return np.array(self.to_list())
 
@@ -252,6 +258,52 @@ class ClusteredScanList(ScanList):
     self.fitted_delta_matches = np.polynomial.Polynomial.fit(
       np.arange(len(self.delta_matches)), self.delta_matches, 3
     ).linspace(len(self.delta_matches))[1]
+
+  def render_complete(self):
+    if not self.fitted_delta_matches:
+      self.fitted_delta_match()
+    incrementation = 0.0
+    xmin = 0
+    xmax = 0
+    fig = plt.figure(figsize=(30, 2))
+    ax = fig.add_subplot(111)
+
+    for index, scan in enumerate(self.scans):
+      if index > 0:
+        incrementation += self.delta_matches[index - 1]
+        print(incrementation)
+        # print(scan.coordinate_list.x_to_list())
+        # print(scan.coordinate_list.x_list_incr(incrementation))
+        ax.plot(scan.coordinate_list.x_list_incr(incrementation), scan.coordinate_list.y_to_list(), 'o',
+          markerfacecolor=tuple([0, 0, 0, 1]), markeredgecolor='k', markersize=0.5)
+        xmax = max(scan.coordinate_list.x_list_incr(incrementation))
+      else:
+        xmin = min(scan.coordinate_list.x_to_list())
+        ax.plot(scan.coordinate_list.x_to_list(), scan.coordinate_list.y_to_list(), 'o',
+          markerfacecolor=tuple([0, 0, 0, 1]), markeredgecolor='k', markersize=0.5)
+    # plt.xticks(np.arange(xmin, xmax, 100))
+    # plt.yticks(np.arange(0, 4000, 100))
+    ax.set_xlim([xmin,xmax])
+    plt.tight_layout()
+    plt.title('complete')
+    plt.savefig('complete')
+    plt.close()
+
+
+  # def render_train_recording(self):
+# # Lege plot ophalen met bepaalde verhouding, zodat het op een trein lijkt
+# recording = render_scatter_plot(0, 0, ymin, ymax, "Recording", savefig)
+# # Scans ophalen en over itereren
+#   for rotation in rotations:
+# # Eerst acceleratie van trein ophalen tussen 2 scans en vervolgens berekenen hoeveel x-as veranderd
+#     acceleration = calculate_cluster_acceleration(vorige scan, huidige scan)
+# # Voeg huidige acceleratie toe aan x-as
+#     x += acceleration
+# # Per rotation de scan ophalen en toevoegen aan een variabele van een plaatje
+#     rotation.append(recording)
+# # Aan einde van alle rotations plot renderen en opslaan
+# recording.save()
+
 
 class Cluster:
   def __init__(self, coordinates, label):
