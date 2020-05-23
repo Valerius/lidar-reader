@@ -68,8 +68,6 @@ def render_linegraph(lst):
 
   fitted_points = np.polynomial.Polynomial.fit(np.arange(len(points)), points, 3)
   plt.plot(*fitted_points.linspace())
-  print(fitted_points)
-  print(fitted_points.linspace())
 
   plt.title('distances')
   plt.savefig('distances/distances')

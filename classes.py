@@ -45,13 +45,6 @@ import similaritymeasures
 import rendering
 import clustering
 
-# Data structure explained:
-# A RECORDING has many SCANS
-# A SCAN has one COORDINATE_LIST with many COORDINATES
-# A SCAN has one CLUSTER_LIST with many CLUSTERS
-# A CLUSTER has one COORDINATE_LIST with many COORDINATES
-# A CLUSTER has one CENTROID
-
 class Recording:
   def __init__(self, coordinates, timestamps):
     self.coordinates = coordinates
@@ -270,10 +263,7 @@ class ClusteredScanList(ScanList):
 
     for index, scan in enumerate(self.scans):
       if index > 0:
-        incrementation += self.delta_matches[index - 1]
-        print(incrementation)
-        # print(scan.coordinate_list.x_to_list())
-        # print(scan.coordinate_list.x_list_incr(incrementation))
+        incrementation += self.fitted_delta_matches[index - 1]
         ax.plot(scan.coordinate_list.x_list_incr(incrementation), scan.coordinate_list.y_to_list(), 'o',
           markerfacecolor=tuple([0, 0, 0, 1]), markeredgecolor='k', markersize=0.5)
         xmax = max(scan.coordinate_list.x_list_incr(incrementation))
@@ -281,29 +271,11 @@ class ClusteredScanList(ScanList):
         xmin = min(scan.coordinate_list.x_to_list())
         ax.plot(scan.coordinate_list.x_to_list(), scan.coordinate_list.y_to_list(), 'o',
           markerfacecolor=tuple([0, 0, 0, 1]), markeredgecolor='k', markersize=0.5)
-    # plt.xticks(np.arange(xmin, xmax, 100))
-    # plt.yticks(np.arange(0, 4000, 100))
     ax.set_xlim([xmin,xmax])
     plt.tight_layout()
     plt.title('complete')
     plt.savefig('complete')
     plt.close()
-
-
-  # def render_train_recording(self):
-# # Lege plot ophalen met bepaalde verhouding, zodat het op een trein lijkt
-# recording = render_scatter_plot(0, 0, ymin, ymax, "Recording", savefig)
-# # Scans ophalen en over itereren
-#   for rotation in rotations:
-# # Eerst acceleratie van trein ophalen tussen 2 scans en vervolgens berekenen hoeveel x-as veranderd
-#     acceleration = calculate_cluster_acceleration(vorige scan, huidige scan)
-# # Voeg huidige acceleratie toe aan x-as
-#     x += acceleration
-# # Per rotation de scan ophalen en toevoegen aan een variabele van een plaatje
-#     rotation.append(recording)
-# # Aan einde van alle rotations plot renderen en opslaan
-# recording.save()
-
 
 class Cluster:
   def __init__(self, coordinates, label):
@@ -319,188 +291,3 @@ class Centroid:
   def get_centroid(self, coordinates):
     return np.median(coordinates)
 
-
-# class Recording:
-#   def __init__(self, coordinates, timestamps):
-#     self.coordinate_list = CoordinateList(coordinates)
-#     self.timestamps = timestamps
-
-
-#     self.matching_clusters = []
-#     self.deltas = []
-
-#   def create_scan(self, scan_coordinates, timestamp, index):
-#     return Scan(scan_coordinates, timestamp, index)
-
-#   def cluster(self):
-#     if self.scans == []:
-#       self.create_scans()
-#     for scan in self.scans:
-#       scan.create_clusters()
-#     self.clustered = True
-#     print('Clustering complete')
-
-#   def render_scans(self):
-#     if self.scans == []:
-#       self.create_scans()
-#     for scan in self.scans:
-#       scan.render()
-
-#   def render_clusters(self):
-#     if self.scans == [] or not self.clustered:
-#       self.cluster()
-#     for scan in self.scans:
-#       scan.render_clusters()
-
-#   def match_clusters(self):
-#     if self.matching_clusters == []:
-#       self.cluster()
-#     previous_scan = None
-#     for scan in self.scans:
-#       if previous_scan != None:
-#         self.matching_clusters.append(clustering.compare_scans(scan, previous_scan))
-#       previous_scan = scan
-#     print('Clusters matched')
-
-#   def render_matching_clusters(self):
-#     self.match_clusters()
-#     for index, match in enumerate(self.matching_clusters):
-#       if match != None:
-#         rendering.render_matching_clusters(match[0], match[1], 'Scan: %d' % index, 'matching-clusters/%d' % index)
-      
-#   def calculate_deltas(self):
-#     self.match_clusters()
-#     for match in self.matching_clusters:
-#       if match != None:
-#         self.deltas.append(clustering.calculate_cluster_distance(match[0], match[1]))
-#       else:
-#         self.deltas.append(None)
-#     print('Deltas calculated')
-
-#   def render_delta(self):
-#     self.calculate_deltas()
-#     rendering.render_linegraph(self.deltas)
-
-# class RecordingWithScans(Recording):
-#   @classmethod
-#   def from_parent(cls, parent):
-#     return cls(parent.coordinates, parent.timestamps)
-
-#   def __init__(self, coordinates, timestamps):
-#     super(RecordingWithScans, self).__init__(coordinates, timestamps)
-#     self.scans = ScanList(coordinates, timestamps)
-
-# class RecordingWithClusteredScans(RecordingWithScans):
-#   @classmethod
-#   def from_parent(cls, parent):
-#     return cls(parent.coordinates, parent.timestamps)
-
-#   def __init__(self, coordinates, timestamps):
-#     super(RecordingWithClusteredScans, self).__init__(coordinates, timestamps)
-#     self.clustering = DBSCAN(eps=300, min_samples=2).fit(self.coordinates.to_list())
-
-
-# class Scan:
-#   def __init__(self, coordinates, timestamp, index):
-#     self.coordinate_list = CoordinateList(coordinates)
-#     self.timestamp = timestamp
-#     self.index = index
-#     self.clustering = None
-#     self.clusters = []
-#     self.outliers = []
-#     self.cluster_selection = None
-
-#   def cluster(self):
-#     self.clustering = DBSCAN(eps=300, min_samples=2).fit(self.coordinates_to_list())
-
-#   def create_clusters(self):
-#     self.cluster()
-#     previous_label = 0
-#     cluster_coordinates = []
-#     cluster_coordinates_counts = []
-
-#     for label, coordinate in zip(self.clustering.labels_, self.coordinate_list):
-#       if label >= 0:
-#         if label > previous_label:
-#           cluster_coordinates_counts.append(len(cluster_coordinates))
-#           self.clusters.append(Cluster(cluster_coordinates, previous_label))
-#           previous_label = label
-#           cluster_coordinates = []
-#         cluster_coordinates.append(coordinate)
-#       else:
-#         self.outliers.append(coordinate)
-#     self.clusters_coordinates_last_decile = np.percentile(cluster_coordinates_counts, 90)
-
-#   def render(self):
-#     rendering.render_scatter_plot(
-#       self.x_coordinates_to_list(), self.y_coordinates_to_list(),
-#       0, 4000, 'Scan: %d' % self.index,
-#       'snapshots/scan-%d' % self.index
-#     )
-    
-#   def render_clusters(self):
-#     if self.clusters == []:
-#       self.create_clusters()
-
-#     rendering.render_clustered_scan(
-#       self.clustering,
-#       self.outliers,
-#       self.clusters,
-#       0,
-#       4000,
-#       'Clustered scan: %d' % self.index,
-#       'clustered-snapshots/scan-%d' % self.index
-#     )
-
-# class Coordinate:
-#   def __init__(self, x, y):
-#     self.x = x
-#     self.y = y
-
-# class CoordinateList:
-#   def __init__(self, coordinates):
-#     try:
-#       self.coordinates = list(Coordinate(c[0], c[1]) for c in coordinates)
-#     except:
-#       self.coordinates = list(coordinates)
-
-#   def to_list(self):
-#     return list((c.x, c.y) for c in self.coordinates)
-    
-#   def to_array(self):
-#     return np.array(list((c.x, c.y) for c in self.coordinates))
-
-#   def x_to_list(self):
-#     return list(c.x for c in self.coordinates)
-
-#   def y_to_list(self):
-#     return list(c.y for c in self.coordinates)
-
-# class ScanList:
-#   def __init__(self, coordinates, timestamps):
-#     self.scans = list(Scan(c, t, i) for i, (c, t) in enumerate(zip(coordinates, timestamps)))
-
-# class Cluster:
-#   def __init__(self, coordinates, label):
-#     self.coordinates = coordinates
-#     self.label = label
-#     self.centroid = self.get_centroid(coordinates)
-
-#   def get_centroid(self, coordinates):
-#     amount = len(coordinates)
-#     if amount != 0:
-#       return Centroid(coordinates)
-
-#   def coordinates_to_list(self):
-#     return [(c.x, c.y) for c in self.coordinates]
-
-#   def coordinates_to_array(self):
-#     return np.array(self.coordinates_to_list())
-
-# class Centroid:
-#   def __init__(self, coordinates):
-#     self.x = self.get_centroid([xc.x for xc in coordinates])
-#     self.y = self.get_centroid([xc.y for xc in coordinates])
-
-#   def get_centroid(self, coordinates):
-#     return sum(coordinates) / len(coordinates)
