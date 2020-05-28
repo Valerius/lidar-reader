@@ -58,13 +58,13 @@ class Recording:
     return RecordingWithClusteredScans.from_parent(self.scan())
 
 class RecordingWithScans(Recording):
-  @classmethod
-  def from_parent(cls, parent):
-    return cls(parent.coordinates, parent.angles, parent.timestamps)
-
   def __init__(self, coordinates, angles, timestamps):
     super(RecordingWithScans, self).__init__(coordinates, angles, timestamps)
     self.scan_list = ScanList(coordinates, timestamps)
+
+  @classmethod
+  def from_parent(cls, parent):
+    return cls(parent.coordinates, parent.angles, parent.timestamps)
 
   def cluster(self):
     return RecordingWithClusteredScans.from_parent(self)
@@ -79,13 +79,13 @@ class RecordingWithClusteredScans(RecordingWithScans):
     self.scan_list = ClusteredScanList.from_parent(scan_list)
 
   def match(self):
-    self.scan_list.match()
+    self.scan_list = MatchedScanList.from_parent(self.scan_list)
 
-  def delta_match(self):
-    self.scan_list.delta_match()
+  def delta(self):
+    self.scan_list = DeltaScanList.from_parent(self.scan_list)
 
-  def render_delta_matches(self):
-    self.scan_list.render_delta_matches()
+  def fit(self):
+    self.scan_list = FittedScanList.from_parent(self.scan_list)
 
 class Scan:
   def __init__(self, coordinates, timestamp, index):
@@ -196,16 +196,17 @@ class ScanList:
       scan.render()
 
 class ClusteredScanList(ScanList):
+  def __init__(self, coordinates = None, timestamps = None, scans = None):
+    super(ClusteredScanList, self).__init__(
+      coordinates = coordinates,
+      timestamps = timestamps,
+      scans = scans
+    )
+    self.cluster()
+
   @classmethod
   def from_parent(cls, parent):
     return cls(scans = parent.scans)
-
-  def __init__(self, coordinates = None, timestamps = None, scans = None):
-    super(ClusteredScanList, self).__init__(scans = scans)
-    self.cluster()
-    self.matches = list()
-    self.delta_matches = list()
-    self.fitted_delta_matches = list()
     
   def cluster(self):
     for index, scan in enumerate(self.scans):
@@ -219,45 +220,79 @@ class ClusteredScanList(ScanList):
     for scan in self.scans:
       scan.render_scan()
 
+class MatchedScanList(ClusteredScanList):
+  def __init__(self, coordinates = None, timestamps = None, scans = None):
+    super(MatchedScanList, self).__init__(
+      coordinates = coordinates,
+      timestamps = timestamps,
+      scans = scans
+    )
+    self.matches = self.match()
+
+  @classmethod
+  def from_parent(cls, parent):
+    return cls(scans = parent.scans)
+
   def match(self):
+    result = []
     previous_scan = None
     for scan in self.scans:
       if previous_scan is not None:
-        self.matches.append(clustering.compare_scans(previous_scan, scan))
+        result.append(clustering.compare_scans(previous_scan, scan))
       previous_scan = scan
-
-  def render_matches(self):
+    return result
+  
+  def render(self):
     if not self.matches:
       self.match()
     for index, match in enumerate(self.matches):
       if match != None:
         rendering.render_matching_clusters(match[0], match[1], 'Scan: %d' % index, 'matching-clusters/%d' % index, 'matching-clusters')
 
-  def delta_match(self):
-    if not self.matches:
-      self.match()
+class DeltaScanList(MatchedScanList):
+  def __init__(self, coordinates = None, timestamps = None, scans = None):
+    super(DeltaScanList, self).__init__(
+      coordinates = coordinates,
+      timestamps = timestamps,
+      scans = scans,
+    )
+    self.delta = self.calculate_delta()
+
+  @classmethod
+  def from_parent(cls, parent):
+    return cls(scans = parent.scans)
+
+  def calculate_delta(self):
+    result = []
     for match in self.matches:
       if match is not None:
-        self.delta_matches.append(clustering.calculate_cluster_distance(match[0], match[1]))
+        result.append(clustering.calculate_cluster_distance(match[0], match[1]))
       else:
-        self.delta_matches.append(None)
+        result.append(None)
+    return result
 
-  def render_delta_matches(self):
-    if not self.delta_matches:
-      self.delta_match()
-    rendering.render_linegraph(self.delta_matches)
+  def render(self):
+    rendering.render_linegraph(self.delta)
 
-  def fitted_delta_match(self):
-    if not self.delta_matches:
-      self.delta_match()
-    
-    self.fitted_delta_matches = np.polynomial.Polynomial.fit(
-      np.arange(len(self.delta_matches)), self.delta_matches, 3
-    ).linspace(len(self.delta_matches))[1]
+class FittedScanList(DeltaScanList):
+  def __init__(self, coordinates = None, timestamps = None, scans = None):
+    super(FittedScanList, self).__init__(
+      coordinates = coordinates,
+      timestamps = timestamps,
+      scans = scans
+    )
+    self.fitted_delta = self.fit()
+
+  @classmethod
+  def from_parent(cls, parent):
+    return cls(scans = parent.scans)
+
+  def fit(self):
+    return np.polynomial.Polynomial.fit(
+      np.arange(len(self.delta)), self.delta, 3
+    ).linspace(len(self.delta))[1]
 
   def render_complete(self):
-    if not self.fitted_delta_matches:
-      self.fitted_delta_match()
     incrementation = 0.0
     xmin = 0
     xmax = 0
@@ -266,7 +301,7 @@ class ClusteredScanList(ScanList):
 
     for index, scan in enumerate(self.scans):
       if index > 0:
-        incrementation += self.fitted_delta_matches[index - 1]
+        incrementation += self.fitted_delta[index - 1]
         ax.plot(scan.coordinate_list.x_list_incr(incrementation), scan.coordinate_list.y_to_list(), 'o',
           markerfacecolor=tuple([0, 0, 0, 1]), markeredgecolor='k', markersize=0.5)
         xmax = max(scan.coordinate_list.x_list_incr(incrementation))
@@ -280,8 +315,6 @@ class ClusteredScanList(ScanList):
     plt.savefig('complete')
     plt.close()
 
-class MatchedScanList(ClusteredScanList):
-  pass
 class Cluster:
   def __init__(self, coordinates, label):
     self.coordinate_list = CoordinateList(coordinates)
