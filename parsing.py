@@ -14,6 +14,7 @@ def parse_scan(line):
 # The ubh file is parsed for the timestamps, the scans and the endStep
 def get_timestamps_and_scans(recording):
     records = []
+    angles = []
     timestamps = []
     endstep = None
     index = 0
@@ -44,7 +45,7 @@ def get_timestamps_and_scans(recording):
             pe = False
             endstep = int(stripped)
 
-    return {'records': records, 'timestamps': timestamps, 'amount_of_records': index, 'endstep': endstep}
+    return { 'records': records, 'angles': angles, 'timestamps': timestamps, 'amount_of_records': index, 'endstep': endstep }
 
 # Convert parsed records to a 2D array
 def calculate_distances(records, amount_of_records, endstep):
@@ -68,18 +69,20 @@ def calculate_y_coordinate(distance, angle):
     return distance * m.cos(angle)
 
 # Using the index and the distance, the x and y coordinates are calculated
-def calculate_coordinate(distance, index):
+def calculate_coordinate_and_angle(distance, index):
     angle = calculate_angle(index)
     x_coordinate = calculate_x_coordinate(distance, angle)
     y_coordinate = calculate_y_coordinate(distance, angle)
-    return (x_coordinate, y_coordinate)
+    return { 'coordinate': (x_coordinate, y_coordinate), 'angle': angle }
 
 # Iterating over every scan in a recording, the coordinates are calculated
-def calculate_coordinates(distances):
-    result = []
+def calculate_coordinates_and_angles(distances):
+    coordinates = []
+    angles = []
     # Iterate over every row (scan)
     for scan in distances:
-        row = []
+        coordinates_row = []
+        angles_row = []
         # Iterate over every item in row (snapshot)
         for i, distance in enumerate(scan):
             # 60000(mm) is the max distance the lidar measures
@@ -89,9 +92,12 @@ def calculate_coordinates(distances):
                 # Each lidar measurement is converted to an x and y value by multiplying the distance 
                 # with the cos and sin of the angle.
                 # The x and y axis intersect at the camera itself
-                # To get the angle of a snapshot, multiply the iteration by 0.25deg (the angle in deg of each snapshot                
-                coordinate = calculate_coordinate(distance, i)
-                row.append(coordinate)
+                # To get the angle of a snapshot, multiply the iteration by 0.25deg (the angle in deg of each snapshot  
+                coordinate_and_angle = calculate_coordinate_and_angle(distance, i)
+                coordinates_row.append(coordinate_and_angle['coordinate'])
+                angles_row.append(coordinate_and_angle['angle'])
 
-        result.append(row)
-    return result
+        coordinates.append(coordinates_row)
+        angles.append(angles_row)
+
+    return { 'coordinates': coordinates, 'angles': angles }

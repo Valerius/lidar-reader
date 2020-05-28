@@ -1,6 +1,7 @@
 # Import local modules
 import parsing
 from classes import *
+import numpy as np
 
 # Get a parsed ubh file
 def get_parsed_ubh_file():
@@ -16,18 +17,18 @@ def get_distances(processed_recording):
     processed_recording['endstep']
   )
 
-def get_coordinates(processed_recording):
+def get_coordinates_and_angles(processed_recording):
   distances = get_distances(processed_recording)
-  return parsing.calculate_coordinates(distances)
+  return parsing.calculate_coordinates_and_angles(distances)
 
 def print_coordinates():
   processed_recording = get_parsed_ubh_file()
-  return get_coordinates(processed_recording)
+  return np.array(get_coordinates_and_angles(processed_recording)['coordinates'])
 
 def get_recording():
   processed_recording = get_parsed_ubh_file()
-  coordinates = get_coordinates(processed_recording)
-  return Recording(coordinates, processed_recording['timestamps'])
+  coordinates_and_angles = get_coordinates_and_angles(processed_recording)
+  return Recording(coordinates_and_angles['coordinates'], processed_recording['timestamps'])
 
 def enter_program():
   recording = get_recording()
