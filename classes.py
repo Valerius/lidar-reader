@@ -198,9 +198,9 @@ class ScanList:
 class ClusteredScanList(ScanList):
   @classmethod
   def from_parent(cls, parent):
-    return cls(parent.scans)
+    return cls(scans = parent.scans)
 
-  def __init__(self, scans):
+  def __init__(self, coordinates = None, timestamps = None, scans = None):
     super(ClusteredScanList, self).__init__(scans = scans)
     self.cluster()
     self.matches = list()
@@ -280,6 +280,8 @@ class ClusteredScanList(ScanList):
     plt.savefig('complete')
     plt.close()
 
+class MatchedScanList(ClusteredScanList):
+  pass
 class Cluster:
   def __init__(self, coordinates, label):
     self.coordinate_list = CoordinateList(coordinates)
