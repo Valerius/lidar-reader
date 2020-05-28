@@ -76,7 +76,7 @@ class RecordingWithClusteredScans(RecordingWithScans):
 
   def __init__(self, coordinates, angles, timestamps, scan_list):
     super(RecordingWithClusteredScans, self).__init__(coordinates, angles, timestamps)
-    self.scan_list = ClusteredScanList.from_parent(coordinates, timestamps, scan_list)
+    self.scan_list = ClusteredScanList.from_parent(scan_list)
 
   def match(self):
     self.scan_list.match()
@@ -92,9 +92,6 @@ class Scan:
     self.coordinate_list = CoordinateList(coordinates)
     self.timestamp = timestamp
     self.index = index
-
-  def cluster(self):
-    return ClusteredScan.from_parent(self)
 
   def render(self):
     rendering.render_scatter_plot(
@@ -188,8 +185,11 @@ class CoordinateList:
     return len(self.coordinates)
 
 class ScanList:
-  def __init__(self, coordinates, timestamps):
-    self.scans = list(Scan(c, t, i) for i, (c, t) in enumerate(zip(coordinates, timestamps)))
+  def __init__(self, coordinates = None, timestamps = None, scans = None):
+    if coordinates is not None and timestamps is not None:
+      self.scans = list(Scan(c, t, i) for i, (c, t) in enumerate(zip(coordinates, timestamps)))
+    else:
+      self.scans = scans
 
   def render(self):
     for scan in self.scans:
@@ -197,19 +197,19 @@ class ScanList:
 
 class ClusteredScanList(ScanList):
   @classmethod
-  def from_parent(cls, coordinates, timestamps, parent):
-    return cls(coordinates, timestamps, parent.scans)
+  def from_parent(cls, parent):
+    return cls(parent.scans)
 
-  def __init__(self, coordinates, timestamps, scans):
-    super(ClusteredScanList, self).__init__(coordinates, timestamps)
-    self.cluster(scans)
+  def __init__(self, scans):
+    super(ClusteredScanList, self).__init__(scans = scans)
+    self.cluster()
     self.matches = list()
     self.delta_matches = list()
     self.fitted_delta_matches = list()
     
-  def cluster(self, scans):
-    for index, scan in enumerate(scans):
-      self.scans[index] = scan.cluster()
+  def cluster(self):
+    for index, scan in enumerate(self.scans):
+      self.scans[index] = ClusteredScan.from_parent(scan)
 
   def render(self):
     for scan in self.scans:
