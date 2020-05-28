@@ -46,8 +46,9 @@ import rendering
 import clustering
 
 class Recording:
-  def __init__(self, coordinates, timestamps):
+  def __init__(self, coordinates, angles, timestamps):
     self.coordinates = coordinates
+    self.angles = angles
     self.timestamps = timestamps
 
   def scan(self):
@@ -59,10 +60,10 @@ class Recording:
 class RecordingWithScans(Recording):
   @classmethod
   def from_parent(cls, parent):
-    return cls(parent.coordinates, parent.timestamps)
+    return cls(parent.coordinates, parent.angles, parent.timestamps)
 
-  def __init__(self, coordinates, timestamps):
-    super(RecordingWithScans, self).__init__(coordinates, timestamps)
+  def __init__(self, coordinates, angles, timestamps):
+    super(RecordingWithScans, self).__init__(coordinates, angles, timestamps)
     self.scan_list = ScanList(coordinates, timestamps)
 
   def cluster(self):
@@ -71,10 +72,10 @@ class RecordingWithScans(Recording):
 class RecordingWithClusteredScans(RecordingWithScans):
   @classmethod
   def from_parent(cls, parent):
-    return cls(parent.coordinates, parent.timestamps, parent.scan_list)
+    return cls(parent.coordinates, parent.angles, parent.timestamps, parent.scan_list)
 
-  def __init__(self, coordinates, timestamps, scan_list):
-    super(RecordingWithClusteredScans, self).__init__(coordinates, timestamps)
+  def __init__(self, coordinates, angles, timestamps, scan_list):
+    super(RecordingWithClusteredScans, self).__init__(coordinates, angles, timestamps)
     self.scan_list = ClusteredScanList.from_parent(coordinates, timestamps, scan_list)
 
   def match(self):

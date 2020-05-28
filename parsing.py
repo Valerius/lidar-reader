@@ -100,4 +100,4 @@ def calculate_coordinates_and_angles(distances):
         coordinates.append(coordinates_row)
         angles.append(angles_row)
 
-    return { 'coordinates': coordinates, 'angles': angles }
+    return { 'coordinates': np.array(coordinates), 'angles': np.array(angles) }
