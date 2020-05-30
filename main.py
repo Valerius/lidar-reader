@@ -35,21 +35,16 @@ def enter_program():
   pdb.set_trace()
 
 def render_scans():
-  recording = get_recording()
-  recording.scan().scan_list.render()
+  get_recording().scan_list.render()
 
 def render_clusters():
-  recording = get_recording()
-  recording.cluster().scan_list.render()
+  get_recording().scan_list.render_clusters()
 
 def render_scan_differences():
-  recording = get_recording()
-  recording.cluster().scan_list.render_delta_matches()
+  get_recording().scan_list.render_deltas()
 
 def render_matching_clusters():
-  recording = get_recording()
-  recording.cluster().scan_list.render_matches()
+  get_recording().scan_list.render_matches()
 
 def render_complete_image():
-  recording = get_recording()
-  recording.cluster().scan_list.render_complete()
+  get_recording().scan_list.render_complete()
