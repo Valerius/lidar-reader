@@ -14,7 +14,6 @@ def parse_scan(line):
 # The ubh file is parsed for the timestamps, the scans and the endStep
 def get_timestamps_and_scans(recording):
     records = []
-    angles = []
     timestamps = []
     endstep = None
     index = 0
@@ -45,7 +44,7 @@ def get_timestamps_and_scans(recording):
             pe = False
             endstep = int(stripped)
 
-    return { 'records': records, 'angles': angles, 'timestamps': timestamps, 'amount_of_records': index, 'endstep': endstep }
+    return { 'records': records, 'timestamps': timestamps, 'amount_of_records': index, 'endstep': endstep }
 
 # Convert parsed records to a 2D array
 def calculate_distances(records, amount_of_records, endstep):
