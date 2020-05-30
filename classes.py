@@ -63,6 +63,7 @@ class Scan:
     self.clusters = list()
     self.outliers = list()
     self.cluster_selection = None
+    self.velocity = None
 
     self.create_clusters(clustering, coordinate_list)
 
@@ -112,6 +113,7 @@ class ScanList:
     self.matches = list()
     self.deltas = list()
     self.fitted = list()
+    self.velocities = list()
 
   def create_scans(self, coordinates, angles, timestamps):
     return list(Scan(c, a, t, i) for i, (c, a, t) in enumerate(zip(coordinates, angles, timestamps)))
@@ -132,14 +134,14 @@ class ScanList:
       previous_scan = scan
   
   def render_matches(self):
-    if not self.matches:
+    if not any(self.matches):
       self.match()
     for index, match in enumerate(self.matches):
       if match != None:
         rendering.render_matching_clusters(match[0], match[1], 'Scan: %d' % index, 'matching-clusters/%d' % index, 'matching-clusters')
 
   def delta(self):
-    if not self.matches:
+    if not any(self.matches):
       self.match()
     for match in self.matches:
       if match is not None:
@@ -148,20 +150,27 @@ class ScanList:
         self.deltas.append(None)
 
   def render_deltas(self):
-    if not self.deltas:
+    if not any(self.deltas):
       self.delta()
     rendering.render_linegraph(self.deltas)
   
   def fit(self):
-    if not self.deltas:
+    if not any(self.deltas):
       self.delta()
     
     self.fitted = np.polynomial.Polynomial.fit(
       np.arange(len(self.deltas)), self.deltas, 3
     ).linspace(len(self.deltas))[1]
 
+  def velocity(self):
+    if not any(self.fitted):
+      self.fit()
+
+    for fit in self.fitted:
+      self.velocities.append(fit / 25)
+
   def render_complete(self):
-    if not self.fitted:
+    if not any(self.fitted):
       self.fit()
     incrementation = 0.0
     xmin = 0
