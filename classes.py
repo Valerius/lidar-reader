@@ -108,8 +108,11 @@ class Scan:
       'clustered-snapshots'
     )
 
-  def add_doppler(self):
-    pass
+  def add_rolling_shutter(self, scan_distance):
+    distance_per_snapshot = scan_distance / 1081
+    for coordinate in self.coordinate_list.coordinates:
+      distance = distance_per_snapshot * coordinate.index
+      coordinate.x = coordinate.x - distance
 
 class ScanList:
   def __init__(self, coordinates, angles, timestamps, indexes):
@@ -198,9 +201,11 @@ class ScanList:
     plt.savefig('complete')
     plt.close()
 
-  def add_doppler(self):
-    for scan in self.scans:
-      pass
+  def add_rolling_shutter(self):
+    if not any(self.fitted):
+      self.fit() 
+    for scan, fit in zip(self.scans[1:], self.fitted):
+      scan.add_rolling_shutter(fit)
       
 class Coordinate:
   def __init__(self, x, y, angle, index):
