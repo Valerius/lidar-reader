@@ -78,10 +78,12 @@ def calculate_coordinate_and_angle(distance, index):
 def calculate_coordinates_and_angles(distances):
     coordinates = []
     angles = []
+    indexes = []
     # Iterate over every row (scan)
     for scan in distances:
         coordinates_row = []
         angles_row = []
+        indexes_row = []
         # Iterate over every item in row (snapshot)
         for i, distance in enumerate(scan):
             # 60000(mm) is the max distance the lidar measures
@@ -95,8 +97,11 @@ def calculate_coordinates_and_angles(distances):
                 coordinate_and_angle = calculate_coordinate_and_angle(distance, i)
                 coordinates_row.append(coordinate_and_angle['coordinate'])
                 angles_row.append(coordinate_and_angle['angle'])
+                indexes_row.append(i)
+
 
         coordinates.append(coordinates_row)
         angles.append(angles_row)
+        indexes.append(indexes_row)
 
-    return { 'coordinates': np.array(coordinates), 'angles': np.array(angles) }
+    return { 'coordinates': np.array(coordinates), 'angles': np.array(angles), 'indexes': np.array(indexes) }

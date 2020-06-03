@@ -28,7 +28,12 @@ def print_coordinates():
 def get_recording():
   processed_recording = get_parsed_ubh_file()
   coordinates_and_angles = get_coordinates_and_angles(processed_recording)
-  return Recording(coordinates_and_angles['coordinates'], coordinates_and_angles['angles'], processed_recording['timestamps'])
+  return Recording(
+    coordinates_and_angles['coordinates'], 
+    coordinates_and_angles['angles'], 
+    processed_recording['timestamps'],
+    coordinates_and_angles['indexes']
+  )
 
 def enter_program():
   recording = get_recording()

@@ -46,16 +46,17 @@ import rendering
 import clustering
 
 class Recording:
-  def __init__(self, coordinates, angles, timestamps):
+  def __init__(self, coordinates, angles, timestamps, indexes):
     self.coordinates = coordinates
     self.angles = angles
     self.timestamps = timestamps
-    self.scan_list = ScanList(coordinates, angles, timestamps)
+    self.indexes = indexes
+    self.scan_list = ScanList(coordinates, angles, timestamps, indexes)
 
 class Scan:
-  def __init__(self, coordinates, angles, timestamp, index):
+  def __init__(self, coordinates, angles, timestamp, indexes, index):
     clustering = self.cluster(coordinates)
-    coordinate_list = CoordinateList(coordinates, angles)
+    coordinate_list = CoordinateList(coordinates, angles, indexes)
     self.coordinate_list = coordinate_list
     self.timestamp = timestamp
     self.index = index
@@ -107,16 +108,19 @@ class Scan:
       'clustered-snapshots'
     )
 
+  def add_doppler(self):
+    pass
+
 class ScanList:
-  def __init__(self, coordinates, angles, timestamps):
-    self.scans = self.create_scans(coordinates, angles, timestamps)
+  def __init__(self, coordinates, angles, timestamps, indexes):
+    self.scans = self.create_scans(coordinates, angles, timestamps, indexes)
     self.matches = list()
     self.deltas = list()
     self.fitted = list()
     self.velocities = list()
 
-  def create_scans(self, coordinates, angles, timestamps):
-    return list(Scan(c, a, t, i) for i, (c, a, t) in enumerate(zip(coordinates, angles, timestamps)))
+  def create_scans(self, coordinates, angles, timestamps, indexes):
+    return list(Scan(c, a, t, i, index) for index, (c, a, t, i) in enumerate(zip(coordinates, angles, timestamps, indexes)))
 
   def render(self):
     for scan in self.scans:
@@ -194,21 +198,26 @@ class ScanList:
     plt.savefig('complete')
     plt.close()
 
+  def add_doppler(self):
+    for scan in self.scans:
+      pass
+      
 class Coordinate:
-  def __init__(self, x, y, angle):
+  def __init__(self, x, y, angle, index):
     self.x = x
     self.y = y
     self.angle = angle
+    self.index = index
 
 class CoordinateList:
-  def __init__(self, coordinates, angles = None):
+  def __init__(self, coordinates, angles = None, indexes = None):
     try:
-      self.coordinates = self.create_coordinates(coordinates, angles)
+      self.coordinates = self.create_coordinates(coordinates, angles, indexes)
     except:
       self.coordinates = list(coordinates)
 
-  def create_coordinates(self, coordinates, angles):
-    return list(Coordinate(c[0], c[1], a) for c, a in zip(coordinates, angles))
+  def create_coordinates(self, coordinates, angles, indexes):
+    return list(Coordinate(c[0], c[1], a, i) for c, a, i in zip(coordinates, angles, indexes))
 
   def to_list(self):
     return list((c.x, c.y) for c in self.coordinates)
