@@ -2,6 +2,7 @@
 import parsing
 from classes import *
 import numpy as np
+import db_connect as db
 
 # Get a parsed ubh file
 def get_parsed_ubh_file():
@@ -35,8 +36,19 @@ def get_recording():
     coordinates_and_angles['indexes']
   )
 
+def get_recording_from_db():
+  recording_record = db.cursor.execute("select * from UBH_recording").fetchone()
+  processed_recording = parsing.get_distances_from_db(recording_record)
+  coordinates_and_angles = parsing.calculate_coordinates_and_angles(processed_recording['records'])
+
+  return Recording(
+    coordinates_and_angles['coordinates'], 
+    coordinates_and_angles['angles'], 
+    processed_recording['timestamps'],
+    coordinates_and_angles['indexes']
+  )
+
 def enter_program():
-  recording = get_recording()
   pdb.set_trace()
 
 def render_scans():

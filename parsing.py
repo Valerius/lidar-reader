@@ -2,6 +2,7 @@
 import numpy as np
 # Math library
 import math as m
+import db_connect as db
 
 # Parse a scan (one rotation recording by the lidar), extracting the distance (x)
 def parse_scan(line):
@@ -105,3 +106,20 @@ def calculate_coordinates_and_angles(distances):
         indexes.append(indexes_row)
 
     return { 'coordinates': np.array(coordinates), 'angles': np.array(angles), 'indexes': np.array(indexes) }
+
+def get_distances_from_db(recording_record):
+    records = list()
+    row = list()
+    index = 0
+    records = list()
+    timestamps = list()
+
+    for scan in db.cursor.execute("select UBH_rotation_scan, Rotation_timestamp from UBH_rotation_scan where UBH_recording=?", recording_record[0]).fetchall():
+        timestamps.append(scan[1])
+        row = list()
+        for point in db.cursor.execute("select * from UBH_rotation_points where UBH_rotation_scan=?", scan[0]).fetchall():
+            row.append(point[1])
+        records.append(row)
+    
+    index = len(records)
+    return { 'records': records, 'timestamps': timestamps, 'amount_of_records': index }
