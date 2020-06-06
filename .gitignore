@@ -133,6 +133,7 @@ file.ubh
 
 # Rendered images
 snapshots/*
+scans/*
 clustered-snapshots/*
 *.png
 

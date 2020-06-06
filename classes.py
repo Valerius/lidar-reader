@@ -46,87 +46,37 @@ import rendering
 import clustering
 
 class Recording:
-  def __init__(self, coordinates, timestamps):
+  def __init__(self, coordinates, angles, timestamps, indexes):
     self.coordinates = coordinates
+    self.angles = angles
     self.timestamps = timestamps
-
-  def scan(self):
-    return RecordingWithScans.from_parent(self)
-
-  def cluster(self):
-    return RecordingWithClusteredScans.from_parent(self.scan())
-
-class RecordingWithScans(Recording):
-  @classmethod
-  def from_parent(cls, parent):
-    return cls(parent.coordinates, parent.timestamps)
-
-  def __init__(self, coordinates, timestamps):
-    super(RecordingWithScans, self).__init__(coordinates, timestamps)
-    self.scan_list = ScanList(coordinates, timestamps)
-
-  def cluster(self):
-    return RecordingWithClusteredScans.from_parent(self)
-
-class RecordingWithClusteredScans(RecordingWithScans):
-  @classmethod
-  def from_parent(cls, parent):
-    return cls(parent.coordinates, parent.timestamps, parent.scan_list)
-
-  def __init__(self, coordinates, timestamps, scan_list):
-    super(RecordingWithClusteredScans, self).__init__(coordinates, timestamps)
-    self.scan_list = ClusteredScanList.from_parent(coordinates, timestamps, scan_list)
-
-  def match(self):
-    self.scan_list.match()
-
-  def delta_match(self):
-    self.scan_list.delta_match()
-
-  def render_delta_matches(self):
-    self.scan_list.render_delta_matches()
+    self.indexes = indexes
+    self.scan_list = ScanList(coordinates, angles, timestamps, indexes)
 
 class Scan:
-  def __init__(self, coordinates, timestamp, index):
-    self.coordinate_list = CoordinateList(coordinates)
+  def __init__(self, coordinates, angles, timestamp, indexes, index):
+    clustering = self.cluster(coordinates)
+    coordinate_list = CoordinateList(coordinates, angles, indexes)
+    self.coordinate_list = coordinate_list
     self.timestamp = timestamp
     self.index = index
-
-  def cluster(self):
-    return ClusteredScan.from_parent(self)
-
-  def render(self):
-    rendering.render_scatter_plot(
-      self.coordinate_list.x_to_list(), self.coordinate_list.y_to_list(),
-      0, 4000, 'Scan: %d' % self.index,
-      'snapshots/scan-%d' % self.index,
-      'snapshots'
-    )
-
-class ClusteredScan(Scan):
-  @classmethod
-  def from_parent(cls, parent):
-    return cls(parent.coordinate_list, parent.timestamp, parent.index)
-
-  def __init__(self, coordinate_list, timestamp, index):
-    super(ClusteredScan, self).__init__(coordinate_list.to_list(), timestamp, index)
-    clustering = self.cluster(coordinate_list.to_list())
     self.clustering = clustering
-    self.cluster_selection = None
     self.clusters = list()
     self.outliers = list()
+    self.cluster_selection = None
+    self.velocity = None
 
-    self.create_clusters(clustering, coordinate_list.coordinates)
+    self.create_clusters(clustering, coordinate_list)
 
-  def cluster(self, coordinates):
-    return DBSCAN(eps=300, min_samples=2).fit(coordinates)
+  def cluster(self, coordinates, eps = 300, min_samples = 2):
+    return DBSCAN(eps, min_samples).fit(coordinates)
 
-  def create_clusters(self, clustering, coordinates):
+  def create_clusters(self, clustering, coordinate_list, precision = 25):
     previous_label = 0
     cluster_coordinates = []
     cluster_coordinates_counts = []
 
-    for index, (label, coordinate) in enumerate(zip(clustering.labels_, coordinates)):
+    for index, (label, coordinate) in enumerate(zip(clustering.labels_, coordinate_list.coordinates)):
       if label >= 0:
         if label > previous_label or (index + 1) is len(clustering.labels_):
           cluster_coordinates_counts.append(len(cluster_coordinates))
@@ -136,9 +86,17 @@ class ClusteredScan(Scan):
         cluster_coordinates.append(coordinate)
       else:
         self.outliers.append(coordinate)
-    self.cluster_selection = np.percentile(cluster_coordinates_counts, 75)
+    self.cluster_selection = np.percentile(cluster_coordinates_counts, 100 - precision)
 
   def render(self):
+    rendering.render_scatter_plot(
+      self.coordinate_list.x_to_list(), self.coordinate_list.y_to_list(),
+      0, 4000, 'Scan: %d' % self.index,
+      'scans/scan-%d' % self.index,
+      'scans'
+    )
+
+  def render_clusters(self):
     rendering.render_clustered_scan(
       self.clustering,
       self.outliers,
@@ -150,20 +108,121 @@ class ClusteredScan(Scan):
       'clustered-snapshots'
     )
 
-  def render_scan(self):
-    super(ClusteredScan, self).render()
+  def add_rolling_shutter(self, scan_distance):
+    distance_per_snapshot = scan_distance / 1081
+    for coordinate in self.coordinate_list.coordinates:
+      distance = distance_per_snapshot * coordinate.index
+      coordinate.x = coordinate.x - distance
 
+class ScanList:
+  def __init__(self, coordinates, angles, timestamps, indexes):
+    self.scans = self.create_scans(coordinates, angles, timestamps, indexes)
+    self.matches = list()
+    self.deltas = list()
+    self.fitted = list()
+    self.velocities = list()
+
+  def create_scans(self, coordinates, angles, timestamps, indexes):
+    return list(Scan(c, a, t, i, index) for index, (c, a, t, i) in enumerate(zip(coordinates, angles, timestamps, indexes)))
+
+  def render(self):
+    for scan in self.scans:
+      scan.render()
+
+  def render_clusters(self):
+    for scan in self.scans:
+      scan.render_clusters()
+
+  def match(self):
+    previous_scan = None
+    for scan in self.scans:
+      if previous_scan is not None:
+        self.matches.append(clustering.compare_scans(previous_scan, scan))
+      previous_scan = scan
+  
+  def render_matches(self):
+    if not any(self.matches):
+      self.match()
+    for index, match in enumerate(self.matches):
+      if match != None:
+        rendering.render_matching_clusters(match[0], match[1], 'Scan: %d' % index, 'matching-clusters/%d' % index, 'matching-clusters')
+
+  def delta(self):
+    if not any(self.matches):
+      self.match()
+    for match in self.matches:
+      if match is not None:
+        self.deltas.append(clustering.calculate_cluster_distance(match[0], match[1]))
+      else:
+        self.deltas.append(None)
+
+  def render_deltas(self):
+    if not any(self.deltas):
+      self.delta()
+    rendering.render_linegraph(self.deltas)
+  
+  def fit(self):
+    if not any(self.deltas):
+      self.delta()
+    
+    self.fitted = np.polynomial.Polynomial.fit(
+      np.arange(len(self.deltas)), self.deltas, 3
+    ).linspace(len(self.deltas))[1]
+
+  def velocity(self):
+    if not any(self.fitted):
+      self.fit()
+
+    for fit in self.fitted:
+      self.velocities.append(fit / 25)
+
+  def render_complete(self):
+    if not any(self.fitted):
+      self.fit()
+    incrementation = 0.0
+    xmin = 0
+    xmax = 0
+    fig = plt.figure(figsize=(30, 2))
+    ax = fig.add_subplot(111)
+
+    for index, scan in enumerate(self.scans):
+      if index > 0:
+        incrementation += self.fitted[index - 1]
+        ax.plot(scan.coordinate_list.x_list_incr(incrementation), scan.coordinate_list.y_to_list(), 'o',
+          markerfacecolor=tuple([0, 0, 0, 1]), markeredgecolor='k', markersize=0.5)
+        xmax = max(scan.coordinate_list.x_list_incr(incrementation))
+      else:
+        xmin = min(scan.coordinate_list.x_to_list())
+        ax.plot(scan.coordinate_list.x_to_list(), scan.coordinate_list.y_to_list(), 'o',
+          markerfacecolor=tuple([0, 0, 0, 1]), markeredgecolor='k', markersize=0.5)
+    ax.set_xlim([xmin,xmax])
+    plt.tight_layout()
+    plt.title('complete')
+    plt.savefig('complete')
+    plt.close()
+
+  def add_rolling_shutter(self):
+    if not any(self.fitted):
+      self.fit() 
+    for scan, fit in zip(self.scans[1:], self.fitted):
+      scan.add_rolling_shutter(fit)
+      
 class Coordinate:
-  def __init__(self, x, y):
+  def __init__(self, x, y, angle, index):
     self.x = x
     self.y = y
+    self.angle = angle
+    self.index = index
 
 class CoordinateList:
-  def __init__(self, coordinates):
+  def __init__(self, coordinates, angles = None, indexes = None):
     try:
-      self.coordinates = list(Coordinate(c[0], c[1]) for c in coordinates)
+      self.coordinates = self.create_coordinates(coordinates, angles, indexes)
     except:
       self.coordinates = list(coordinates)
+
+  def create_coordinates(self, coordinates, angles, indexes):
+    return list(Coordinate(c[0], c[1], a, i) for c, a, i in zip(coordinates, angles, indexes))
 
   def to_list(self):
     return list((c.x, c.y) for c in self.coordinates)
@@ -186,110 +245,16 @@ class CoordinateList:
   def len(self):
     return len(self.coordinates)
 
-class ScanList:
-  def __init__(self, coordinates, timestamps):
-    self.scans = list(Scan(c, t, i) for i, (c, t) in enumerate(zip(coordinates, timestamps)))
-
-  def render(self):
-    for scan in self.scans:
-      scan.render()
-
-class ClusteredScanList(ScanList):
-  @classmethod
-  def from_parent(cls, coordinates, timestamps, parent):
-    return cls(coordinates, timestamps, parent.scans)
-
-  def __init__(self, coordinates, timestamps, scans):
-    super(ClusteredScanList, self).__init__(coordinates, timestamps)
-    self.cluster(scans)
-    self.matches = list()
-    self.delta_matches = list()
-    self.fitted_delta_matches = list()
-    
-  def cluster(self, scans):
-    for index, scan in enumerate(scans):
-      self.scans[index] = scan.cluster()
-
-  def render(self):
-    for scan in self.scans:
-      scan.render()
-
-  def render_scans(self):
-    for scan in self.scans:
-      scan.render_scan()
-
-  def match(self):
-    previous_scan = None
-    for scan in self.scans:
-      if previous_scan is not None:
-        self.matches.append(clustering.compare_scans(previous_scan, scan))
-      previous_scan = scan
-
-  def render_matches(self):
-    if not self.matches:
-      self.match()
-    for index, match in enumerate(self.matches):
-      if match != None:
-        rendering.render_matching_clusters(match[0], match[1], 'Scan: %d' % index, 'matching-clusters/%d' % index, 'matching-clusters')
-
-  def delta_match(self):
-    if not self.matches:
-      self.match()
-    for match in self.matches:
-      if match is not None:
-        self.delta_matches.append(clustering.calculate_cluster_distance(match[0], match[1]))
-      else:
-        self.delta_matches.append(None)
-
-  def render_delta_matches(self):
-    if not self.delta_matches:
-      self.delta_match()
-    rendering.render_linegraph(self.delta_matches)
-
-  def fitted_delta_match(self):
-    if not self.delta_matches:
-      self.delta_match()
-    
-    self.fitted_delta_matches = np.polynomial.Polynomial.fit(
-      np.arange(len(self.delta_matches)), self.delta_matches, 3
-    ).linspace(len(self.delta_matches))[1]
-
-  def render_complete(self):
-    if not self.fitted_delta_matches:
-      self.fitted_delta_match()
-    incrementation = 0.0
-    xmin = 0
-    xmax = 0
-    fig = plt.figure(figsize=(30, 2))
-    ax = fig.add_subplot(111)
-
-    for index, scan in enumerate(self.scans):
-      if index > 0:
-        incrementation += self.fitted_delta_matches[index - 1]
-        ax.plot(scan.coordinate_list.x_list_incr(incrementation), scan.coordinate_list.y_to_list(), 'o',
-          markerfacecolor=tuple([0, 0, 0, 1]), markeredgecolor='k', markersize=0.5)
-        xmax = max(scan.coordinate_list.x_list_incr(incrementation))
-      else:
-        xmin = min(scan.coordinate_list.x_to_list())
-        ax.plot(scan.coordinate_list.x_to_list(), scan.coordinate_list.y_to_list(), 'o',
-          markerfacecolor=tuple([0, 0, 0, 1]), markeredgecolor='k', markersize=0.5)
-    ax.set_xlim([xmin,xmax])
-    plt.tight_layout()
-    plt.title('complete')
-    plt.savefig('complete')
-    plt.close()
-
 class Cluster:
   def __init__(self, coordinates, label):
-    self.coordinate_list = CoordinateList(coordinates)
+    self.coordinate_list = CoordinateList(coordinates = coordinates)
     self.label = label
     self.centroid = Centroid(coordinates)
 
 class Centroid:
   def __init__(self, coordinates):
-    self.x = self.get_centroid([xc.x for xc in coordinates])
-    self.y = self.get_centroid([xc.y for xc in coordinates])
+    self.x = self.get_centroid([c.x for c in coordinates])
+    self.y = self.get_centroid([c.y for c in coordinates])
 
   def get_centroid(self, coordinates):
     return np.median(coordinates)
-

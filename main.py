@@ -1,6 +1,7 @@
 # Import local modules
 import parsing
 from classes import *
+import numpy as np
 
 # Get a parsed ubh file
 def get_parsed_ubh_file():
@@ -16,39 +17,39 @@ def get_distances(processed_recording):
     processed_recording['endstep']
   )
 
-def get_coordinates(processed_recording):
+def get_coordinates_and_angles(processed_recording):
   distances = get_distances(processed_recording)
-  return parsing.calculate_coordinates(distances)
+  return parsing.calculate_coordinates_and_angles(distances)
 
 def print_coordinates():
   processed_recording = get_parsed_ubh_file()
-  return get_coordinates(processed_recording)
+  return np.array(get_coordinates_and_angles(processed_recording)['coordinates'])
 
 def get_recording():
   processed_recording = get_parsed_ubh_file()
-  coordinates = get_coordinates(processed_recording)
-  return Recording(coordinates, processed_recording['timestamps'])
+  coordinates_and_angles = get_coordinates_and_angles(processed_recording)
+  return Recording(
+    coordinates_and_angles['coordinates'], 
+    coordinates_and_angles['angles'], 
+    processed_recording['timestamps'],
+    coordinates_and_angles['indexes']
+  )
 
 def enter_program():
   recording = get_recording()
   pdb.set_trace()
 
 def render_scans():
-  recording = get_recording()
-  recording.scan().scan_list.render()
+  get_recording().scan_list.render()
 
 def render_clusters():
-  recording = get_recording()
-  recording.cluster().scan_list.render()
+  get_recording().scan_list.render_clusters()
 
 def render_scan_differences():
-  recording = get_recording()
-  recording.cluster().scan_list.render_delta_matches()
+  get_recording().scan_list.render_deltas()
 
 def render_matching_clusters():
-  recording = get_recording()
-  recording.cluster().scan_list.render_matches()
+  get_recording().scan_list.render_matches()
 
 def render_complete_image():
-  recording = get_recording()
-  recording.cluster().scan_list.render_complete()
+  get_recording().scan_list.render_complete()
