@@ -5,7 +5,6 @@
 This command line application (CLA) reads UBH files, produced by a UTM-30LX-EW Lidar. The program is taylored specifically to process and render the image of a moving vehicle. The translations and operations on the data can be found in the help section of the CLA and this readme file. 
 
 ## Important
-- This version of the CLA presupposes a connection to a remote database defined in db_connect.py;
 - All distances are measured in millimeters;
 - The Lidar distance points are converted to coordinates on a 2D Cartesian plane;
 - The Lidar is to be found at the intersection of the x and y axes;
@@ -18,8 +17,6 @@ The application is devided into several modules/files with a functional distinct
 - reader.py: logic for the CLA;
 - main.py: functions corresponding to the commands defined in the reader.py;
 - parsing.py: code for parsing the UBH-file, converting distance points to coordinates;
-- db_connect.py: connection to the remote database;
-- pipeline.py: sending and fetching of parsed data;
 - classes.py: data model and functions used for all the transformations and operations on the processed (parsed) data;
 - clustering.py: clustering the processed data;
 - rendering.py: creating images of the processed data.
