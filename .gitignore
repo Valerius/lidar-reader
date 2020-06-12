@@ -142,3 +142,5 @@ clustered-snapshots/*
 
 # Output files
 parse-file.txt
+centroids.txt
+coordinates.txt

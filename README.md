@@ -24,12 +24,40 @@ The application is devided into several modules/files with a functional distinct
 - clustering.py: clustering the processed data;
 - rendering.py: creating images of the processed data.
 
+## Data model for data manipulation
+The main structure used for manupulation of the processed (parsed) data is to be found in classes.py. The classes are structured as follows:
+- Recording: Main class that holds all the other classes. Contains the coordinates and timestamps of the original recording. A recording has one ScanList.
+- ScanList: class that holds the logic to process scans. A scan list has many Scans.
+- Scan: holds the coordinates measured in one rotation of the Lidar. Has a timestamp for when the scan was taken and can be divided up into clusters. A scan has one CoordinateList and has many Clusters.
+- Cluster: a group of Coordinates from a scan that is supposed to belong together. A cluster is created from a Scan using the DBSCAN algorithm. A cluster has one CoordinateList and has one Centroid.
+- Centroid: contains the median x and y coordinates for a cluster.
+- CoordinateList: list of Coordinates.
+- Coordinate: A point measured by the Lidar, expressed in an x and y coordinate on a 2D Cartesian plane, with the Lidar at the intersection of the x and y axes.
+
 ## Installation
 Make sure you have the Python3 language installed. Clone the repository. Dependencies can be installed by running:
 pip3 install -r requirements.txt
 
 ## Execution
-The command line application can be executed using python3 reader \[option\]. To display the help message, execute:
-python3 reader --help
+The command line application can be executed using python3 reader.py [option]. To display the help message, execute:
+python3 reader.py --help
+You need to supply a UBH-file in the project folder and name it file.ubh in order to supply data for the CLA to run.
 
 ## Help
+usage: reader.py [-h] [-pf] [-pco] [-rs] [-rc] [-rsd] [-rmc] [-rci] [-ep]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -pf, --parse-file     parse a ubh-file
+  -pco, --print-coordinates
+                        get coordinates of distances in a ubh file
+  -rs, --render-scans   render scans belonging to a ubh file
+  -rc, --render-clusters
+                        render scans belonging to a ubh file with clusters
+  -rsd, --render-scan-differences
+                        render distance between each scan
+  -rmc, --render-matching-clusters
+                        render all matching clusters
+  -rci, --render-complete-image
+                        render a compelete image of the train
+  -ep, --enter-program  enter program
