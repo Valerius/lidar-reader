@@ -9,21 +9,21 @@ import main
 # Initialize cli application
 parser = argparse.ArgumentParser()
 # Option to parse ubh file
-parser.add_argument('-pf', '--parse-file', help='parse a ubh-file', action='store_true')
+parser.add_argument('-pf', '--parse-file', help='parse a ubh-file and output to file', action='store_true')
 # Option to get coordinates of distances in file
-parser.add_argument('-pco', '--print-coordinates', help='get coordinates of distances in a ubh file', action='store_true')
+parser.add_argument('-pco', '--print-coordinates', help='get coordinates of distances in a ubh file and output to file', action='store_true')
 # Option to render the scans belonging to a ubh file
-parser.add_argument('-rs', '--render-scans', help='render scans belonging to a ubh file', action='store_true')
+parser.add_argument('-rs', '--render-scans', help='render scans belonging to a ubh file and output to folder', action='store_true')
 # # Option to render the scans belonging to a ubh file with clusters
-parser.add_argument('-rc', '--render-clusters', help='render scans belonging to a ubh file with clusters', action='store_true')
+parser.add_argument('-rc', '--render-clusters', help='render scans belonging to a ubh file with clusters and output to folder', action='store_true')
 # # Option to print distance between each scan
-parser.add_argument('-rsd', '--render-scan-differences', help='render distance between each scan', action='store_true')
+parser.add_argument('-rsd', '--render-scan-differences', help='render distance between each scan and output to folder', action='store_true')
 # Option to render all matching clusters
-parser.add_argument('-rmc', '--render-matching-clusters', help='render all matching clusters', action='store_true')
+parser.add_argument('-rmc', '--render-matching-clusters', help='render all matching clusters and output to folder', action='store_true')
 # Option to render a complete image of the train
 parser.add_argument('-rci', '--render-complete-image', help='render a compelete image of the train', action='store_true')
 # Option to enter the program to enter commands
-parser.add_argument('-ep', '--enter-program', help='enter program', action='store_true')
+parser.add_argument('-ep', '--enter-program', help='enter program and execute functions at will', action='store_true')
 
 
 # Read arguments specified by user
