@@ -112,7 +112,7 @@ class Scan:
     distance_per_snapshot = scan_distance / 1081
     for coordinate in self.coordinate_list.coordinates:
       distance = distance_per_snapshot * coordinate.index
-      coordinate.x = coordinate.x - distance
+      coordinate.x = coordinate.x + distance
 
 class ScanList:
   def __init__(self, coordinates, angles, timestamps, indexes):
