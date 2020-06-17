@@ -8,7 +8,7 @@ This command line application (CLA) reads UBH files, produced by a UTM-30LX-EW L
 - All distances are measured in millimeters;
 - The Lidar distance points are converted to coordinates on a 2D Cartesian plane;
 - The Lidar is to be found at the intersection of the x and y axes;
-- The object is supposed to be moving from left to right;
+- The object is supposed to be moving from right to left;
 - The object is supposed to be moving on a straight line, perpendicular to the camera;
 - The object is supposed to be found within 4000mm from the camera.
 
