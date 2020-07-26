@@ -1,11 +1,12 @@
 # db library
 import pyodbc 
 
+#write the password and user name yourself, dont forget to remove before pushing
 conn = pyodbc.connect('Driver={ODBC Driver 17 for SQL Server};'
-                      'Server=tcp:62.194.254.144;'
-                      'Port=1433;'
-                      'Database=NSLiDAR;'
-                      'UID=hicham;'
-                      'PWD=TheHomies2020;')
+                      'Server=tcp:;'
+                      'Port=;'
+                      'Database=;'
+                      'UID=;'
+                      'PWD=;')
 
 cursor = conn.cursor()
