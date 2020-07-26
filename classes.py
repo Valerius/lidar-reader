@@ -55,18 +55,23 @@ class Recording:
 
 class Scan:
   def __init__(self, coordinates, angles, timestamp, indexes, index):
-    clustering = self.cluster(coordinates)
     coordinate_list = CoordinateList(coordinates, angles, indexes)
-    self.coordinate_list = coordinate_list
-    self.timestamp = timestamp
-    self.index = index
-    self.clustering = clustering
-    self.clusters = list()
-    self.outliers = list()
-    self.cluster_selection = None
-    self.velocity = None
+    if len(coordinate_list.coordinates) > 50:
+      self.status = True
+      clustering = self.cluster(coordinates)
+      self.coordinate_list = coordinate_list
+      self.timestamp = timestamp
+      self.index = index
+      self.centroid = Centroid(coordinate_list.coordinates)
+      self.clustering = clustering
+      self.clusters = list()
+      self.outliers = list()
+      self.cluster_selection = None
+      self.velocity = None
 
-    self.create_clusters(clustering, coordinate_list)
+      self.create_clusters(clustering, coordinate_list)
+    else:
+      self.status = False
 
   def cluster(self, coordinates, eps = 300, min_samples = 2):
     return DBSCAN(eps, min_samples).fit(coordinates)
@@ -116,6 +121,7 @@ class Scan:
 
 class ScanList:
   def __init__(self, coordinates, angles, timestamps, indexes):
+    self.direction = None # True means train comes from the right, False means train comes from the left
     self.scans = self.create_scans(coordinates, angles, timestamps, indexes)
     self.matches = list()
     self.deltas = list()
@@ -123,7 +129,16 @@ class ScanList:
     self.velocities = list()
 
   def create_scans(self, coordinates, angles, timestamps, indexes):
-    return list(Scan(c, a, t, i, index) for index, (c, a, t, i) in enumerate(zip(coordinates, angles, timestamps, indexes)))
+    result = list()
+    for index, (c, a, t, i) in enumerate(zip(coordinates, angles, timestamps, indexes)):
+      scan = Scan(c, a, t, i, index)
+      if scan.status:
+        result.append(scan)
+    if result[0].centroid.x > 0:
+      self.direction = True
+    else:
+      self.direction = False   
+    return result
 
   def render(self):
     for scan in self.scans:
@@ -154,7 +169,7 @@ class ScanList:
       if match is not None:
         self.deltas.append(clustering.calculate_cluster_distance(match[0], match[1]))
       else:
-        self.deltas.append(None)
+        self.deltas.append(0.0)
 
   def render_deltas(self):
     if not any(self.deltas):
@@ -164,7 +179,6 @@ class ScanList:
   def fit(self):
     if not any(self.deltas):
       self.delta()
-    
     self.fitted = np.polynomial.Polynomial.fit(
       np.arange(len(self.deltas)), self.deltas, 3
     ).linspace(len(self.deltas))[1]
@@ -187,7 +201,10 @@ class ScanList:
 
     for index, scan in enumerate(self.scans):
       if index > 0:
-        incrementation += self.fitted[index - 1]
+        if self.direction:
+          incrementation += self.fitted[index - 1]
+        else:
+          incrementation -= self.fitted[index - 1]
         ax.plot(scan.coordinate_list.x_list_incr(incrementation), scan.coordinate_list.y_to_list(), 'o',
           markerfacecolor=tuple([0, 0, 0, 1]), markeredgecolor='k', markersize=0.5)
         xmax = max(scan.coordinate_list.x_list_incr(incrementation))
@@ -222,7 +239,11 @@ class CoordinateList:
       self.coordinates = list(coordinates)
 
   def create_coordinates(self, coordinates, angles, indexes):
-    return list(Coordinate(c[0], c[1], a, i) for c, a, i in zip(coordinates, angles, indexes))
+    result = list()
+    for c, a, i in zip(coordinates, angles, indexes):
+      if (c[1] > 23) and (c[1] < 4000):
+        result.append(Coordinate(c[0], c[1], a, i))
+    return result
 
   def to_list(self):
     return list((c.x, c.y) for c in self.coordinates)
